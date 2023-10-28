@@ -3,7 +3,7 @@ const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
 
-const contactsRouter = require("./routes/api/index");
+const contactsRouter = require("./routes/api/index.js");
 
 dotenv.config();
 
@@ -17,7 +17,7 @@ app.use(morgan("tiny"));
 app.use(cors(coreOptions));
 app.use(express.json());
 
-app.use("/api", contactsRouter);
+app.use("/", contactsRouter);
 
 app.use((_, res, __) => {
   res.status(404).json({

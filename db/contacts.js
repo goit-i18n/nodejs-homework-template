@@ -1,7 +1,7 @@
 const fs = require("fs/promises");
 const path = require("path");
 
-const contactsPath = path.join(__dirname, "db", "contacts.json");
+const contactsPath = path.join(__dirname, "contacts.json");
 
 //* const listContacts = async () => {};
 async function listContacts() {
@@ -20,7 +20,8 @@ async function listContacts() {
 async function getContactById(contactId) {
   try {
     const contacts = await listContacts();
-    const contact = contacts.find((contact) => contact.id === contactId);
+    const contact = contacts.find(({ id }) => id === contactId);
+    // const contact = contacts.find((contact) => contact.id === contactId);
 
     if (!contact) {
       throw new Error(`Contact with id=${contactId} not found`);
