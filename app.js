@@ -2,6 +2,7 @@ const express = require("express");
 const cors = require("cors");
 const morgan = require("morgan");
 const dotenv = require("dotenv");
+const mongoose = require("mongoose");
 
 const contactsRouter = require("./routes/api/index.js");
 
@@ -10,8 +11,6 @@ dotenv.config();
 const coreOptions = require("./cors");
 
 const app = express();
-
-// const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 
 app.use(morgan("tiny"));
 app.use(cors(coreOptions));
@@ -38,4 +37,18 @@ app.use((err, _, res, __) => {
   });
 });
 
-module.exports = app;
+const PORT = process.env.PORT_SERVER || 5000;
+const URL_DB = process.env.DB_URL;
+
+mongoose
+  .connect(URL_DB)
+  .then(() => {
+    console.log("MongoDB server is running");
+    app.listen(PORT, () => {
+      console.log(`Server is running. Use our API on port:${PORT}`);
+    });
+  })
+  .catch((err) => {
+    console.log(`Server is not running.Error:${err.message}`);
+  });
+
