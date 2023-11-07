@@ -56,7 +56,7 @@ const remove = async (req, res, next) => {
       });
     }
   } catch (error) {
-    res.error(404).json({
+    res.status(404).json({
       status: "error",
       code: 404,
       message: "Not found",
@@ -80,8 +80,8 @@ const create = async (req, res, next) => {
       code: 201,
       data: result,
     });
+    console.log();
   } catch (error) {
-    console.log(error);
     res.status(404).json({
       status: "error",
       code: 404,
@@ -103,7 +103,7 @@ const update = async (req, res, next) => {
       });
     }
   } catch (error) {
-    res.error(404).json({
+    res.status(404).json({
       status: "error",
       code: 404,
     });

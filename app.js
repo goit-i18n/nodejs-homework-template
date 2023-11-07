@@ -51,4 +51,3 @@ mongoose
   .catch((err) => {
     console.log(`Server is not running.Error:${err.message}`);
   });
-

@@ -4,10 +4,10 @@ const Schema = mongoose.Schema;
 
 const contact = new Schema({
   name: { type: String, require: [true, "Set name for contact"], minLenght: 2 },
-  email: { type: String, minLenght: 4 },
-  phone: { type: String, minLenght: 4 },
-  favorite: { type: Boolean },
-  age: { type: Number, minLenght: 1 },
+  email: { type: String, require: true, minLength: 2 },
+  phone: { type: String, require: true, minLength: 2 },
+  favorite: { type: Boolean, require: true },
+  age: { type: Number, require: true, minLength: 1 },
 });
 
 const Contact = mongoose.model("contacts", contact);
