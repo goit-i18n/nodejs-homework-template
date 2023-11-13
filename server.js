@@ -6,7 +6,6 @@ dotenv.config();
 
 const PORT = process.env.PORT || 3000;
 const URL_DB = process.env.DB_URL;
-console.log(URL_DB);
 
 mongoose
 .connect(URL_DB)
