@@ -118,46 +118,41 @@ const updateContact = async (req, res, next) => {
   next(error);
  }
 };
+
 const updateContactStatus = async (req, res, next) => {
- try {
-  if (Object.keys(req.body).length === 0) {
-   return res.status(400).json({
-    status: "error",
-    code: 400,
-    message: "missing field favorite",
-   });
-  }
-  const { error } = contactJoiSchema.validate(req.body);
-  if (error) {
-   return res.status(400).json({
-    status: "error",
-    code: 400,
-    message: error.message,
-   });
-  }
   const { contactId } = req.params;
-  const allContacts = await service.listContacts();
-  if (allContacts.some((item) => item.id === contactId)) {
-   const updatedStatusContact = await service.updateStatusContact(contactId, {
-    ...req.body,
-   });
-   return res.json({
-    status: "success",
-    code: 200,
-    data: {
-     result: updatedStatusContact,
-    },
-   });
-  } else {
-   return res.status(404).json({
-    status: "error",
-    code: 404,
-    message: "Not found",
-   });
+  const { favorite } = req.body;
+  try {
+    if (Object.keys(req.body).length === 0) {
+         return res.status(400).json({
+          status: "error",
+          code: 400,
+          message: "missing field favorite",
+         });
+        }
+        const { error } = contactJoiSchema.validate(req.body);
+        if (error) {
+         return res.status(400).json({
+          status: "error",
+          code: 400,
+          message: error.message,
+         });
+        }
+    const result = await service.updateStatusContact(contactId, { favorite });
+    
+    if (result) {
+      res.status(200).json({
+        status: "updated",
+        code: 200,
+        data: result,
+      });
+    }
+  } catch (error) {
+   
+    res.status(404).json({
+      status: "error",
+    });
   }
- } catch (error) {
-  next(error);
- }
 };
 
 module.exports = { getAllContacts, getContactById, addContacts, updateContact, deleteContact, updateContactStatus };
