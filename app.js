@@ -15,13 +15,23 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api", contactsRouter);
-
-app.use((req, res) => {
-  res.status(404).json({ message: "Not found" });
+app.use((_, res, __) => {
+  res.status(404).json({
+    status: "error",
+    code: 404,
+    message: "Route not found",
+    data: "Not found!",
+  });
 });
 
-app.use((err, req, res, next) => {
-  res.status(500).json({ message: err.message });
+app.use((err, _, res, __) => {
+  console.log(err.stack);
+  res.status(500).json({
+    status: "fail",
+    code: 500,
+    message: err.message,
+    data: "Internal Server error!",
+  });
 });
 
 const PORT = process.env.PORT_SERVER || 5000;
