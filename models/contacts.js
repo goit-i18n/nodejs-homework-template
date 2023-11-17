@@ -1,67 +1,93 @@
-import { Schema, model } from "mongoose";
-import { handleSaveError, runValidatorsAtUpdate } from "./hooks.js";
-import Joi from "joi";
+const fs = require("fs/promises");
+const nanoid = require("nanoid");
+const path = require("path");
 
-const contactlist = ["private", "corporate"];
+const contactsPath = path.join(__dirname, "contacts.json");
 
-const contactSchema = new Schema(
-  {
-    name: {
-      type: String,
-      required: [true, "Set name for contact"],
-    },
-    email: {
-      type: String,
-      required: true,
-    },
-    phone: {
-      type: String,
-      required: true,
-    },
-    favorite: {
-      type: Boolean,
-      default: false,
-    },
-    listType: {
-      type: String,
-      enum: contactlist,
-      required: true,
-    },
-  },
-  {
-    versionKey: false,
-    timestamps: true,
+const listContacts = async () => {
+  try {
+    const contacts = await fs.readFile(contactsPath, { encoding: "utf-8" });
+    return JSON.parse(contacts);
+  } catch (error) {
+    console.log(`Error: ${error.message}`);
   }
-);
+};
 
-contactSchema.post("save", handleSaveError);
+const getContactById = async (contactId) => {
+  try {
+    const contacts = await listContacts();
+    return contacts.filter(({ id }) => id === contactId);
+  } catch (error) {
+    console.log(`Error: ${error.message}`);
+  }
+};
 
-contactSchema.pre("findOneAndUpdate", runValidatorsAtUpdate);
+const removeContact = async (contactId) => {
+  try {
+    const contacts = await listContacts();
+    const contactToRemove = contacts.find(({ id }) => id === contactId);
+    if (!contactToRemove) {
+      return null;
+    }
+    const newContacts = contacts.filter(({ id }) => id !== contactId);
+    await fs.writeFile(contactsPath, JSON.stringify(newContacts, null, 2), {
+      encoding: "utf-8",
+    });
 
-contactSchema.post("findOneAndUpdate", handleSaveError);
+    return newContacts;
+  } catch (error) {
+    console.log(`Error: ${error.message}`);
+  }
+};
 
-export const contactAddSchema = Joi.object({
-  name: Joi.string().required().messages({
-    "any.required": `"name" required field`,
-  }),
-  email: Joi.string().required().messages({
-    "any.required": `"email" required field`,
-  }),
-  phone: Joi.string().required().messages({
-    "any.required": `"phone" required field`,
-  }),
-  favorite: Joi.boolean(),
-  listType: Joi.string()
-    .valid(...contactlist)
-    .required(),
-});
+const addContact = async (body) => {
+  try {
+    const { name, email, phone } = body;
+    if (!name || !email || !phone) {
+      return null;
+    }
+    const contacts = await listContacts();
+    const newContact = {
+      id: nanoid(),
+      name,
+      email,
+      phone,
+    };
+    const updatedContacts = [newContact, ...contacts];
+    await fs.writeFile(contactsPath, JSON.stringify(updatedContacts, null, 2), {
+      encoding: "utf-8",
+    });
+    return newContact;
+  } catch (error) {
+    console.log(`Error: ${error.message}`);
+  }
+};
 
-export const contactUpdateFavoriteSchema = Joi.object({
-  favorite: Joi.boolean().required().messages({
-    "any.required": `missing field favorite`,
-  }),
-});
+const updateContact = async (contactId, body) => {
+  const contacts = await listContacts();
+  const contactToUpdate = contacts.find((contact) => contact.id === contactId);
 
-const Contact = model("contact", contactSchema);
+  if (!contactToUpdate) {
+    return null;
+  }
+  const otherContacts = contacts.filter((contact) => contact.id !== contactId);
 
-export default Contact;
+  const updatedContact = {
+    ...contactToUpdate,
+    ...body,
+  };
+
+  const contactsToSave = [...otherContacts, updatedContact];
+  await fs.writeFile(contactsPath, JSON.stringify(contactsToSave, null, 2), {
+    encoding: "utf-8",
+  });
+  return updatedContact;
+};
+
+module.exports = {
+  listContacts,
+  getContactById,
+  removeContact,
+  addContact,
+  updateContact,
+};
