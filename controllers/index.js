@@ -1,3 +1,8 @@
+const jwt = require("jsonwebtoken");
+require("dotenv").config();
+
+const secret = process.env.SECRET;
+
 const {
   getAllContacts,
   getContactById,
@@ -5,9 +10,15 @@ const {
   createContact,
   updateContact,
   updateFavoriteContact,
+  getAllUsers,
+  createUser,
+  checkUserDB,
+  findUser,
+  logOutUser,
 } = require("../services/index");
 
-const getAll = async (req, res, next) => {
+// ************ContactControllers************
+const getContactsController = async (req, res, next) => {
   try {
     const results = await getAllContacts();
     res.json({
@@ -24,7 +35,7 @@ const getAll = async (req, res, next) => {
   }
 };
 
-const getById = async (req, res, next) => {
+const getContactByIdController = async (req, res, next) => {
   const { contactId } = req.params;
   try {
     const result = await getContactById(contactId);
@@ -44,7 +55,7 @@ const getById = async (req, res, next) => {
   }
 };
 
-const remove = async (req, res, next) => {
+const removeContactController = async (req, res, next) => {
   const { contactId } = req.params;
   try {
     const result = await removeContact(contactId);
@@ -64,7 +75,7 @@ const remove = async (req, res, next) => {
   }
 };
 
-const create = async (req, res, next) => {
+const createContactController = async (req, res, next) => {
   try {
     const { name, email, phone, favorite, age } = req.body;
     const result = await createContact({
@@ -90,7 +101,7 @@ const create = async (req, res, next) => {
   }
 };
 
-const update = async (req, res, next) => {
+const updateContactController = async (req, res, next) => {
   const { contactId } = req.params;
   const { name, email, phone, age } = req.body;
   try {
@@ -110,7 +121,7 @@ const update = async (req, res, next) => {
   }
 };
 
-const updateFavorite = async (req, res, next) => {
+const updateFavoriteContactController = async (req, res, next) => {
   const { contactId } = req.params;
   const { favorite } = req.body;
   try {
@@ -130,4 +141,191 @@ const updateFavorite = async (req, res, next) => {
   }
 };
 
-module.exports = { getAll, getById, remove, create, update, updateFavorite };
+// ************UserControllers************
+const getAllUsersController = async (req, res, next) => {
+  try {
+    const results = await getAllUsers();
+    res.json({
+      status: "Success",
+      code: 200,
+      data: results,
+    });
+  } catch (error) {
+    res.status(404).json({
+      status: "error",
+      code: 404,
+    });
+    next(error);
+  }
+};
+
+const createUserController = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        status: "error",
+        code: 400,
+        message: "Missing required fields email or password",
+      });
+    }
+
+    const result = await createUser({ email, password });
+
+    const payload = { email: result.email };
+    const token = jwt.sign(payload, secret, { expiresIn: "24h" });
+
+    res.status(201).json({
+      status: "Success",
+      code: 201,
+      data: { email: result.email, token },
+    });
+  } catch (error) {
+    if (error.message === "This email already exists") {
+      return res.status(409).json({
+        status: "Conflict",
+        code: 409,
+        message: "Email in use",
+      });
+    }
+
+    console.error(error);
+    res.status(500).json({
+      status: 500,
+      message: "Internal Server error",
+    });
+  }
+};
+
+const loginUserController = async (req, res, next) => {
+  try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(400).json({
+        status: "Validation error",
+        code: 400,
+        message: "Missing required fields email or password",
+      });
+    }
+
+    const result = await checkUserDB({ email, password });
+    const payload = { email: result.email };
+    const token = jwt.sign(payload, secret, { expiresIn: "24h" });
+
+    res.status(201).json({
+      status: "Success",
+      code: 201,
+      data: { email: result.email, token },
+    });
+  } catch (error) {
+    if (error.message === "Email or password is wrong") {
+      return res.message(401).json({
+        status: "Unauthorized",
+        code: 401,
+        message: "Email or password is wrong",
+      });
+    }
+    console.error(error);
+    res.status(500).json({
+      code: 500,
+      error: "Internal server error",
+    });
+  }
+};
+
+const findUserController = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Missing Authorization header",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Missing token",
+      });
+    }
+
+    let tokenDecode;
+    try {
+      tokenDecode = jwt.verify(token, secret);
+      console.log(tokenDecode);
+    } catch (error) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Invalid token",
+        data: error.message,
+      });
+    }
+
+    const result = await findUser({ email: tokenDecode.email });
+    console.log(result);
+    if (result) {
+      res.status(200).json({
+        status: "Success",
+        code: 200,
+        data: {
+          email: result.email,
+          subscription: result.subscription,
+          id: result._id,
+        },
+      });
+    } else {
+      res.status(404).json({
+        status: "error",
+        code: 404,
+        message: "Not authorized",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+const logOutController = async (req, res, next) => {
+  try {
+    const userId = req.user.id;
+    const result = await logOutUser(userId);
+
+    if (result.status === "Success") {
+      res.status(204).json({
+        status: "No content",
+        code: 204,
+        message: "User logged out successfully",
+      });
+    } else {
+      res.status(401).json({
+        message: "Not authorized",
+      });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      message: "Internal Server error",
+    });
+  }
+};
+
+module.exports = {
+  getContactsController,
+  getContactByIdController,
+  removeContactController,
+  createContactController,
+  updateContactController,
+  updateFavoriteContactController,
+  getAllUsersController,
+  createUserController,
+  loginUserController,
+  findUserController,
+  logOutController,
+};

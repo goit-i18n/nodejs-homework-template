@@ -4,10 +4,11 @@ const morgan = require("morgan");
 const dotenv = require("dotenv");
 const mongoose = require("mongoose");
 
-const contactsRouter = require("./routes/api/index.js");
-
 dotenv.config();
 
+require("./middleware/passportConfig.js");
+
+const contactsRouter = require("./routes/api/index.js");
 const coreOptions = require("./cors");
 
 const app = express();
