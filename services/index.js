@@ -60,6 +60,10 @@ const getContactById = async (id) => {
   const contact = await Contact.findById(id);
   return contact;
 };
+const getUserbyId = async (id) => {
+  const user = await User.findById(id);
+  return user;
+};
 
 const removeContact = async (id) => {
   const result = await Contact.findByIdAndDelete(id);
@@ -98,4 +102,5 @@ module.exports = {
   createUser,
   updateUser,
   checkUserDB,
+  getUserbyId,
 };
