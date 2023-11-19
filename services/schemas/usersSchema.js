@@ -31,6 +31,6 @@ user.methods.validPassword = (password) => {
   // passwordFrontend === dcripata(passwordBackend)
   return bCrypt.compareSync(password, this.password);
 };
-const User = mongoose.model("users", user);
+const User = mongoose.model("User", user);
 
 module.exports = User;

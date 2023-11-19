@@ -14,16 +14,19 @@ const params = {
   jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
 };
 
-// JWT 
+// JWT
 passport.use(
-  new Strategy(params, function (payload, done) {
-    User.find({ email: payload.email })
-      .then(([user]) => {
-        if (!user) {
-          return done(new Error("Userul nu exista!"));
-        }
-        return done(null, user);
-      })
-      .catch((err) => done(err));
+  new Strategy(params, async function (payload, done) {
+    try {
+      const [user] = await User.find({ email: payload.email });
+
+      if (!user) {
+        return done(new Error("Userul nu exista!"));
+      }
+
+      return done(null, user);
+    } catch (err) {
+      return done(err);
+    }
   })
 );
