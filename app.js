@@ -4,6 +4,7 @@ const cors = require("cors");
 const mongoose = require("mongoose");
 const contactsRouter = require("./routes/api/contacts");
 const dotenv = require("dotenv");
+const path = require("path");
 
 dotenv.config();
 const app = express();
@@ -23,6 +24,7 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
+app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT_SERVER || 5000;
 const URL_DB = process.env.DB_URL;

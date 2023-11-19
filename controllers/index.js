@@ -128,7 +128,36 @@ const updateFavorite = async (req, res, next) => {
     });
   }
 };
+const uploadAvatarController = async (req, res, next) => {
+  console.log("test");
+  try {
+    if (!req.file) {
+      return res.status(404).json({ error: "Nu exista fisier de incarcat!" });
+    }
 
+    const image = await Jimp.read(req.file.path);
+    await image.resize(250, 250).writeAsync(req.file.path);
+
+    const uniqFilename = `${req.user._id}-${Date.now()}${path.extname(
+      req.file.originalname
+    )}`;
+
+    const destinationPath = path.join(
+      __dirname,
+      `../public/avatars/${uniqFilename}`
+    );
+
+    fs.renameSync(req.file.path, destinationPath);
+
+    req.user.avatarUrl = `/avatars/${uniqFilename}`;
+    await req.user.save();
+
+    res.status(200).json({ avatarUrl: req.user.avatarUrl });
+  } catch (error) {
+    res.status(404).json({ error: error.message });
+    next(error);
+  }
+};
 module.exports = {
   getAll,
   getById,
@@ -136,4 +165,5 @@ module.exports = {
   create,
   update,
   updateFavorite,
+  uploadAvatarController,
 };
