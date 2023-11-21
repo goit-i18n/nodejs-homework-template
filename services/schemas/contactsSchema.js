@@ -12,6 +12,10 @@ const contact = new Schema({
   phone: { type: String, required: true, minLength: 2 },
   favorite: { type: Boolean, required: true },
   age: { type: Number, required: true, minLength: 1 },
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: "user",
+  },
 });
 
 const Contact = mongoose.model("contacts", contact);
