@@ -1,3 +1,9 @@
+const Jimp = require("jimp");
+const fs = require("fs");
+const path = require("path");
+
+// const User = require("../services/schemas/UsersSchema");
+
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
@@ -214,10 +220,10 @@ const loginUserController = async (req, res, next) => {
     const payload = { email: result.email };
     const token = jwt.sign(payload, secret, { expiresIn: "24h" });
 
-    res.status(201).json({
+    res.status(200).json({
       status: "Success",
-      code: 201,
-      data: { email: result.email, token },
+      code: 200,
+      data: { email: result.email, token, subscription: result.subscription },
     });
   } catch (error) {
     if (error.message === "Email or password is wrong") {
@@ -316,6 +322,45 @@ const logOutController = async (req, res, next) => {
   }
 };
 
+const uploadAvatarController = async (req, res, next) => {
+  try {
+    if (!req.file) {
+      return res.status(404).json({ error: "File not found" });
+    }
+
+    const uniqueFileName = `${req.user._id}-${Date.now()}${path.extname(req.file.originalname)}`;
+
+    const destinationPath = path.join(__dirname, `../public/avatars/${uniqueFileName}`);
+
+    await Jimp.read(req.file.path)
+      .then((image) => {
+        return image.resize(250, 250).quality(60).greyscale().writeAsync(destinationPath);
+      })
+      .then(() => {
+        fs.unlinkSync(req.file.path);
+      })
+      .catch((error) => {
+        throw error;
+      });
+
+    req.user.avatarURL = `avatars/${uniqueFileName}`;
+    await req.user.save();
+
+    res.status(200).json({
+      status: "Success",
+      code: 200,
+      avatarURL: req.user.avatarURL,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({
+      status: "error",
+      code: 500,
+      message: "Internal server error",
+    });
+  }
+};
+
 module.exports = {
   getContactsController,
   getContactByIdController,
@@ -328,4 +373,5 @@ module.exports = {
   loginUserController,
   findUserController,
   logOutController,
+  uploadAvatarController,
 };
