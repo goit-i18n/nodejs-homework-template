@@ -25,12 +25,11 @@ const user = new Schema({
   },
   avatarUrl: { type: String, minLength: 2 },
 });
-user.methods.setPassword = (password) => {
+user.methods.setPassword = function (password) {
   this.password = bCrypt.hashSync(password, bCrypt.genSaltSync(6));
 };
 
-user.methods.validPassword = (password) => {
-  // passwordFrontend === dcripata(passwordBackend)
+user.methods.validPassword = function (password) {
   return bCrypt.compareSync(password, this.password);
 };
 user.pre("save", function (next) {
@@ -47,7 +46,6 @@ user.pre("save", function (next) {
   }
   next();
 });
-
 const User = mongoose.model("User", user);
 
 module.exports = User;

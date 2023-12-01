@@ -4,6 +4,7 @@ const {
   createUser,
   updateUser,
   checkUserDB,
+  findUser,
 } = require("../services/index");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
@@ -138,6 +139,63 @@ const updateUserController = async (req, res, next) => {
     });
   }
 };
+const findUserController = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Missing Authorization header",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Missing token",
+      });
+    }
+
+    let tokenDecode;
+    try {
+      tokenDecode = jwt.verify(token, secret);
+      console.log(tokenDecode);
+    } catch (error) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Invalid token",
+        data: error.message,
+      });
+    }
+
+    const result = await findUser({ email: tokenDecode.email });
+    console.log(result);
+    if (result) {
+      res.status(200).json({
+        status: "Success",
+        code: 200,
+        data: {
+          email: result.email,
+          subscription: result.subscription,
+          id: result._id,
+        },
+      });
+    } else {
+      res.status(404).json({
+        status: "error",
+        code: 404,
+        message: "Not authorized",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
 const uploadAvatarController = async (req, res, next) => {
   console.log("test");
   try {
@@ -146,29 +204,37 @@ const uploadAvatarController = async (req, res, next) => {
     }
 
     const image = await Jimp.read(req.file.path);
-    await image.resize(250, 250).writeAsync(req.file.path);
+    await image.resize(250, 250);
 
     const uniqFilename = `${req.user._id}-${Date.now()}${path.extname(
       req.file.originalname
     )}`;
-
     const destinationPath = path.join(
       __dirname,
-      `../public/avatars/${uniqFilename}`
+      "../public/avatars",
+      uniqFilename
     );
 
-    fs.renameSync(req.file.path, destinationPath);
+    if (!fs.existsSync(path.dirname(destinationPath))) {
+      fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+    }
 
-    req.user.avatarUrl = `/avatars/${uniqFilename}`;
-    await req.user.save();
+    await image.writeAsync(destinationPath);
+    fs.unlinkSync(req.file.path);
 
-    res.status(200).json({ avatarUrl: req.user.avatarUrl });
+    if (req.user) {
+      req.user.avatarUrl = `/avatars/${uniqFilename}`;
+      await req.user.save();
+      res.status(200).json({ avatarUrl: req.user.avatarUrl });
+    } else {
+      res.status(404).json({ error: "Utilizatorul nu a fost gasit!" });
+    }
   } catch (error) {
-    res.status(404).json({ error: error.message });
+    console.error(error);
+    res.status(500).json({ error: "Eroare interna de server." });
     next(error);
   }
 };
-
 module.exports = {
   getAll,
   getUsersController,
@@ -176,5 +242,6 @@ module.exports = {
   updateUserController,
   loginUserController,
   logoutUserController,
+  findUserController,
   uploadAvatarController,
 };

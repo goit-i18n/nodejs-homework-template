@@ -80,6 +80,10 @@ const updateContact = async (id, updateData) => {
   });
   return result;
 };
+const findUser = async (user) => {
+  const result = await User.findOne({ email: user.email });
+  return result;
+};
 
 const updateFavoriteContact = async (id, favoriteUpdate) => {
   console.log(id, favoriteUpdate);
@@ -102,5 +106,6 @@ module.exports = {
   createUser,
   updateUser,
   checkUserDB,
+  findUser,
   getUserbyId,
 };

@@ -4,12 +4,12 @@ const { auth } = require("../../middelwares/auth");
 const multer = require("multer");
 const path = require("path");
 const {
-  getAll,
   getUsersController,
   createUserController,
   loginUserController,
-  updateUserController,
+
   logoutUserController,
+  findUserController,
   uploadAvatarController,
 } = require("../../controllers/index");
 const storage = multer.diskStorage({
@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const fileFilter = (req, file, cb) => {
+const filefilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
@@ -33,15 +33,20 @@ const fileFilter = (req, file, cb) => {
 };
 
 const upload = multer({ storage: storage, fileFilter: fileFilter });
-
 router.get("/", (req, res) => {
   res.status(200).json({ message: "API is running" });
 });
-router.get("/users", auth, getUsersController);
-router.post("/users/signup", createUserController);
-router.post("/users/login", loginUserController);
-router.get("/users/logout", auth, logoutUserController);
-router.patch("/users/:userId", auth, updateUserController);
-router.get("/contacts", auth, getAll);
+
+// Ruta pentru obținerea tuturor utilizatorilor
+router.get("/users", getUsersController);
+
+// Rute pentru autentificare și gestionarea utilizatorilor
+router.post("/signup", createUserController);
+router.post("/login", loginUserController);
+router.get("/current", auth, findUserController);
+router.get("/logout", auth, logoutUserController);
+
+// Rută pentru încărcarea avatarului utilizatorului autentificat
 router.patch("/avatars", auth, upload.single("avatar"), uploadAvatarController);
+
 module.exports = router;

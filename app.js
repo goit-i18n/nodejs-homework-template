@@ -10,7 +10,7 @@ dotenv.config();
 const app = express();
 
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
-
+app.use(express.static(path.join(__dirname, "public")));
 app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json());
@@ -34,7 +34,6 @@ app.use((err, _, res, __) => {
     data: "Internal Server error!",
   });
 });
-app.use(express.static(path.join(__dirname, "public")));
 
 const PORT = process.env.PORT_SERVER || 5000;
 const URL_DB = process.env.DB_URL;
