@@ -24,7 +24,7 @@ const storage = multer.diskStorage({
   },
 });
 
-const filefilter = (req, file, cb) => {
+const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
     cb(null, true);
   } else {
@@ -37,16 +37,18 @@ router.get("/", (req, res) => {
   res.status(200).json({ message: "API is running" });
 });
 
-// Ruta pentru obținerea tuturor utilizatorilor
 router.get("/users", getUsersController);
 
-// Rute pentru autentificare și gestionarea utilizatorilor
 router.post("/signup", createUserController);
 router.post("/login", loginUserController);
 router.get("/current", auth, findUserController);
 router.get("/logout", auth, logoutUserController);
 
-// Rută pentru încărcarea avatarului utilizatorului autentificat
-router.patch("/avatars", auth, upload.single("avatar"), uploadAvatarController);
+router.patch(
+  "/users/avatars",
+  auth,
+  upload.single("avatar"),
+  uploadAvatarController
+);
 
 module.exports = router;

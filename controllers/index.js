@@ -206,15 +206,16 @@ const uploadAvatarController = async (req, res, next) => {
     const image = await Jimp.read(req.file.path);
     await image.resize(250, 250);
 
-    const uniqFilename = `${req.user._id}-${Date.now()}${path.extname(
+    const uniqueFilename = `${req.user._id}-${Date.now()}${path.extname(
       req.file.originalname
     )}`;
     const destinationPath = path.join(
       __dirname,
       "../public/avatars",
-      uniqFilename
+      uniqueFilename
     );
 
+    u;
     if (!fs.existsSync(path.dirname(destinationPath))) {
       fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
     }
@@ -223,7 +224,7 @@ const uploadAvatarController = async (req, res, next) => {
     fs.unlinkSync(req.file.path);
 
     if (req.user) {
-      req.user.avatarUrl = `/avatars/${uniqFilename}`;
+      req.user.avatarUrl = `/avatars/${uniqueFilename}`;
       await req.user.save();
       res.status(200).json({ avatarUrl: req.user.avatarUrl });
     } else {
