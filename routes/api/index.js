@@ -14,8 +14,8 @@ router.patch("/contacts/:contactId/favorite", controller.update);
 router.get("/users", controller.getUsers); 
 router.post("/users/signup", controller.userSignup);
 router.post("/users/login", controller.userLogin);
-router.get("/users/logout",controller.userLogout);
-router.get("/users/current",  controller.currentUser);
+router.get("/users/logout", auth ,controller.userLogout);
+router.get("/users/current", auth, controller.currentUser);
 router.patch("/users/:userId/subscription", auth, controller.updateSubscription);
 /* router.get("/contacts", auth, getContactsController);
 router.get("/account/name", auth, getCurrentUserName); */
