@@ -283,13 +283,13 @@ const currentUser = async (req, res, next) => {
     const user = jwt.verify(token, secret);
     console.log(user);
     // Continuați cu logica dvs. pentru a găsi utilizatorul și a trimite răspunsul
-    const result = await services.userName({ email: user.email });
+    const result = await services.userName({ email: user.email },{subscription:user.subscription});
     console.log(result);
     if (result) {
       res.status(200).json({
         status: "success",
         code: 200,
-        data: { name: result.name },
+        data: { name: result.name, subscription:user.subscription },
       });
     } else {
       // Returnați o eroare 404 sau 401 în funcție de situație

@@ -92,7 +92,7 @@ const updateUser = async (id, token) => {
 };
 
 const userName = async (user) => {
-  const result = await User.findOne({ email: user.email });
+  const result = await User.findOne({ email: user.email },{subscription:user.subscription});
   return result;
 };
 
