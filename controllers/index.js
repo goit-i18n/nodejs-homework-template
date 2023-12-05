@@ -7,6 +7,7 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
 const secret = process.env.SECRET;
+exports.secret = secret;
 
  const get = async (req, res, next) => {
   try {
@@ -175,11 +176,9 @@ const userSignup = async (req, res) => {
       email,
       password,
     });
-
-    const payload = { id: result.id, email: result.email };
-
+    const payload = { id: result.id, email: result.email, subscription:result.subscription };
     const token = jwt.sign(payload, secret, { expiresIn: "1h" });
-
+    await services.updateUser(result.id, { token });
     res.status(201).json({
       status: "succes",
       code: 201,
@@ -192,7 +191,6 @@ const userSignup = async (req, res) => {
     });
   }
 };
-
 const userLogin = async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -200,11 +198,9 @@ const userLogin = async (req, res, next) => {
       email,
       password,
     });
-
-   const payload = { id: result.id, email: result.email };
-
+    const payload = { id: result.id, email: result.email, subscription:result.subscription };
     const token = jwt.sign(payload, secret, { expiresIn: "1h" });
-
+    await services.updateUser(result.id, { token });
     res.status(201).json({
       status: "succes",
       code: 201,
@@ -220,7 +216,6 @@ const userLogin = async (req, res, next) => {
     });
   }
 };
-
 
 const userLogout = async (req, res, next) => {
   const userId = req.user;

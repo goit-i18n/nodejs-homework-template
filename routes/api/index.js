@@ -16,7 +16,7 @@ router.post("/users/signup", controller.userSignup);
 router.post("/users/login", controller.userLogin);
 router.get("/users/logout", auth ,controller.userLogout);
 router.get("/users/current", auth, controller.currentUser);
-router.patch("/users/:userId/subscription", auth, controller.updateSubscription);
+router.patch("/users/:userId/subscription",  auth,  controller.updateSubscription);
 
 
 module.exports = router;
