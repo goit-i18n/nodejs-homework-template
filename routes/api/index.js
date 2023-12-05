@@ -17,7 +17,6 @@ router.post("/users/login", controller.userLogin);
 router.get("/users/logout", auth ,controller.userLogout);
 router.get("/users/current", auth, controller.currentUser);
 router.patch("/users/:userId/subscription", auth, controller.updateSubscription);
-/* router.get("/contacts", auth, getContactsController);
-router.get("/account/name", auth, getCurrentUserName); */
+
 
 module.exports = router;

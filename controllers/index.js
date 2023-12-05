@@ -176,7 +176,7 @@ const userSignup = async (req, res) => {
       password,
     });
 
-    const payload = { email: result.email };
+    const payload = { id: result.id, email: result.email };
 
     const token = jwt.sign(payload, secret, { expiresIn: "1h" });
 
@@ -201,7 +201,7 @@ const userLogin = async (req, res, next) => {
       password,
     });
 
-    const payload = { email: result.email };
+   const payload = { id: result.id, email: result.email };
 
     const token = jwt.sign(payload, secret, { expiresIn: "1h" });
 
@@ -221,12 +221,12 @@ const userLogin = async (req, res, next) => {
   }
 };
 
- const userLogout = async (req, res, next) => {
-  const { userId } = req.user;
-  const { token} = null;
+
+const userLogout = async (req, res, next) => {
+  const userId = req.user;
+  const token = null;
   try {
     const result = await services.updateUser(userId, { token });
-    console.log(result);
     if (result) {
       res.status(404).json({
         status: "updated",
@@ -240,7 +240,7 @@ const userLogin = async (req, res, next) => {
       status: "error",
     });
   }
-}; 
+};
 
 const updateSubscription = async (req, res, next) => {
   const { userId } = req.params;
@@ -314,8 +314,6 @@ module.exports = {
   userLogout,
   updateSubscription,
   currentUser
-   /*  getContactsController,
-  getCurrentUserName, */
 }; 
 
 

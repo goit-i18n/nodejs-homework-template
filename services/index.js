@@ -81,6 +81,11 @@ const userExists = async ({ email, password }) => {
   }
 };
 
+/* const getUserbyId = async (id) => {
+  const user = await User.findById(id);
+  return user;
+}; */
+
 const updateUser = async (id, token) => {
   console.log(id, token);
   console.log(token);
