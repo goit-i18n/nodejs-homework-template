@@ -10,6 +10,8 @@ const jwt = require("jsonwebtoken");
 require("dotenv").config();
 const Jimp = require("jimp");
 const secret = process.env.SECRET;
+const fs = require("fs");
+const path = require("path");
 
 const getUsersController = async (req, res, next) => {
   try {
@@ -215,7 +217,6 @@ const uploadAvatarController = async (req, res, next) => {
       uniqueFilename
     );
 
-    u;
     if (!fs.existsSync(path.dirname(destinationPath))) {
       fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
     }

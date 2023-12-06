@@ -7,6 +7,8 @@ const dotenv = require("dotenv");
 const path = require("path");
 
 dotenv.config();
+require("./middelwares/password.js");
+
 const app = express();
 
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
