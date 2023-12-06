@@ -1,13 +1,8 @@
 const passport = require("passport");
 
-const auth = async (req, res, next) => {
-  try {
-    const user = await passport.authenticate("jwt", { session: false })(
-      req,
-      res
-    );
-
-    if (!user) {
+const auth = (req, res, next) => {
+  passport.authenticate("jwt", { session: false }, (err, user) => {
+    if (!user || err) {
       return res.status(401).json({
         status: "error",
         code: 401,
@@ -18,9 +13,7 @@ const auth = async (req, res, next) => {
 
     req.user = user;
     next();
-  } catch (error) {
-    next(error);
-  }
+  })(req, res, next);
 };
 
 module.exports = {

@@ -4,11 +4,14 @@ const {
   createUser,
   updateUser,
   checkUserDB,
+  findUser,
 } = require("../services/index");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
-
+const Jimp = require("jimp");
 const secret = process.env.SECRET;
+const fs = require("fs");
+const path = require("path");
 
 const getUsersController = async (req, res, next) => {
   try {
@@ -81,27 +84,6 @@ const loginUserController = async (req, res, next) => {
     });
   }
 };
-
-const updateUserController = async (req, res, next) => {
-  const { userId } = req.params;
-  const { major } = req.body;
-  try {
-    const result = await updateUser(userId, { major });
-    console.log(result);
-    if (result) {
-      res.status(200).json({
-        status: "updated",
-        code: 200,
-        data: result,
-      });
-    }
-  } catch (error) {
-    console.log(error);
-    res.status(404).json({
-      status: "error",
-    });
-  }
-};
 const logoutUserController = async (req, res, _id) => {
   try {
     const user = await getUserbyId();
@@ -139,11 +121,129 @@ const getAll = async (req, res, next) => {
   }
 };
 
+const updateUserController = async (req, res, next) => {
+  const { userId } = req.params;
+  const { major } = req.body;
+  try {
+    const result = await updateUser(userId, { major });
+    console.log(result);
+    if (result) {
+      res.status(200).json({
+        status: "updated",
+        code: 200,
+        data: result,
+      });
+    }
+  } catch (error) {
+    console.log(error);
+    res.status(404).json({
+      status: "error",
+    });
+  }
+};
+const findUserController = async (req, res, next) => {
+  try {
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Missing Authorization header",
+      });
+    }
+
+    const token = authHeader.split(" ")[1];
+    if (!token) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Missing token",
+      });
+    }
+
+    let tokenDecode;
+    try {
+      tokenDecode = jwt.verify(token, secret);
+      console.log(tokenDecode);
+    } catch (error) {
+      return res.status(401).json({
+        status: "error",
+        code: 401,
+        message: "Invalid token",
+        data: error.message,
+      });
+    }
+
+    const result = await findUser({ email: tokenDecode.email });
+    console.log(result);
+    if (result) {
+      res.status(200).json({
+        status: "Success",
+        code: 200,
+        data: {
+          email: result.email,
+          subscription: result.subscription,
+          id: result._id,
+        },
+      });
+    } else {
+      res.status(404).json({
+        status: "error",
+        code: 404,
+        message: "Not authorized",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+};
+
+const uploadAvatarController = async (req, res, next) => {
+  console.log("test");
+  try {
+    if (!req.file) {
+      return res.status(404).json({ error: "Nu exista fisier de incarcat!" });
+    }
+
+    const image = await Jimp.read(req.file.path);
+    await image.resize(250, 250);
+
+    const uniqueFilename = `${req.user._id}-${Date.now()}${path.extname(
+      req.file.originalname
+    )}`;
+    const destinationPath = path.join(
+      __dirname,
+      "../public/avatars",
+      uniqueFilename
+    );
+
+    if (!fs.existsSync(path.dirname(destinationPath))) {
+      fs.mkdirSync(path.dirname(destinationPath), { recursive: true });
+    }
+
+    await image.writeAsync(destinationPath);
+    fs.unlinkSync(req.file.path);
+
+    if (req.user) {
+      req.user.avatarUrl = `/avatars/${uniqueFilename}`;
+      await req.user.save();
+      res.status(200).json({ avatarUrl: req.user.avatarUrl });
+    } else {
+      res.status(404).json({ error: "Utilizatorul nu a fost gasit!" });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: "Eroare interna de server." });
+    next(error);
+  }
+};
 module.exports = {
   getAll,
   getUsersController,
   createUserController,
-  loginUserController,
   updateUserController,
+  loginUserController,
   logoutUserController,
+  findUserController,
+  uploadAvatarController,
 };
