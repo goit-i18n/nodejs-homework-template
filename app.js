@@ -1,7 +1,7 @@
 const express = require("express");
 const logger = require("morgan");
 const cors = require("cors");
-// const API-KEY = PMAK-65ddedfac0e330000193648d-81e02c91832224689c0c5f353544a8d9f6
+
 const contactsRouter = require("./routes/api/contacts");
 
 const app = express();
