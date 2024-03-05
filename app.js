@@ -1,25 +1,47 @@
-const express = require('express')
-const logger = require('morgan')
-const cors = require('cors')
+require("dotenv").config();
 
-const contactsRouter = require('./routes/api/contacts')
+const createError = require("http-errors");
+const express = require("express");
+const path = require("path");
+const cookieParser = require("cookie-parser");
+const logger = require("morgan");
 
-const app = express()
+const indexRouter = require("./routes/api/index");
+const contactsRouter = require("./routes/api/contacts");
+const { connectToDb } = require("./db");
+const cors = require("cors");
+const app = express();
 
-const formatsLogger = app.get('env') === 'development' ? 'dev' : 'short'
+connectToDb();
 
-app.use(logger(formatsLogger))
-app.use(cors())
-app.use(express.json())
+// view engine setup
+app.set("views", path.join(__dirname, "views"));
+app.set("view engine", "jade");
 
-app.use('/api/contacts', contactsRouter)
+app.use(logger("dev"));
+app.use(express.json());
+app.use(cors());
+app.use(express.urlencoded({ extended: false }));
+app.use(cookieParser());
+// app.use(express.static(path.join(__dirname, "public")));
 
-app.use((req, res) => {
-  res.status(404).json({ message: 'Not found' })
-})
+app.use("/", indexRouter);
+app.use("/api/contacts", contactsRouter);
 
-app.use((err, req, res, next) => {
-  res.status(500).json({ message: err.message })
-})
+// catch 404 and forward to error handler
+app.use(function (req, res, next) {
+  next(createError(404));
+});
 
-module.exports = app
+// error handler
+app.use(function (err, req, res, next) {
+  // set locals, only providing error in development
+  res.locals.message = err.message;
+  res.locals.error = req.app.get("env") === "development" ? err : {};
+
+  // render the error page
+  res.status(err.status || 500);
+  res.render("error");
+});
+
+module.exports = app;
