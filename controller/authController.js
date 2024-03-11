@@ -64,4 +64,14 @@ const login = async (req, res) => {
     res.status(500).json({ message: "Server error" });
   }
 };
-module.exports = { login, signup };
+const logout = async (req, res) => {
+  try {
+    const user = req.user;
+    user.token = null;
+    await user.save();
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "An error occurred" });
+  }
+};
+module.exports = { login, signup, logout };

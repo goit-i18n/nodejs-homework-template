@@ -2,8 +2,10 @@ const express = require("express");
 const router = express.Router();
 const usersController = require("../../controller/authController");
 
-router.post("/signup", usersController.signup);
+const auth = require("../../auth/authMiddleware");
 
-router.post("/login", usersController.login);
-// router.get("/users/logout", async (req, res, next) => {});
+router.post("/signup", auth, usersController.signup);
+
+router.post("/login", auth, usersController.login);
+router.get("/users/logout", auth, usersController.logout);
 module.exports = router;
