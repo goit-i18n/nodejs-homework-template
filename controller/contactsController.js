@@ -11,7 +11,7 @@ const getContactById = async (contactId) => {
 };
 
 const removeContact = async (contactId) => {
-  const deletedContact = await Contact.findByIdAndDelete(contactId);
+  const deletedContact = await Contact.findByIdAndRemove(contactId);
   console.log(deletedContact, "deleted");
   return deletedContact;
 };
