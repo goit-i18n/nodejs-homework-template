@@ -5,7 +5,11 @@ const Joi = require("joi");
 const User = require("../models/User");
 const STANDARD_ROLE = require("./constants");
 const dotenv = require("dotenv");
-const authenticateToken = require("../middleware/authMiddleware");
+const {
+  protectRoute,
+  authenticateToken,
+} = require("../middleware/authMiddleware");
+const usersController = require("../controllers/usersController");
 
 dotenv.config();
 const router = express.Router();
@@ -22,6 +26,10 @@ router.get("/", async (req, res) => {
 });
 
 // Signup route /users/signup
+// RequestBody: {
+//   "email": "example@example.com",
+//   "password": "examplepassword"
+// }
 router.post("/signup", async (req, res) => {
   try {
     const { error } = joiSchema.validate(req.body);
@@ -54,6 +62,10 @@ router.post("/signup", async (req, res) => {
 });
 
 // Login route
+// RequestBody: {
+//   "email": "example@example.com",
+//   "password": "examplepassword"
+// }
 router.post("/login", async (req, res) => {
   try {
     const { error } = joiSchema.validate(req.body);
@@ -105,18 +117,50 @@ router.post("/login", async (req, res) => {
 });
 
 // Logout route
+// GET /users/logout
+// Authorization: "Bearer {{token}}"
 router.post("/logout", authenticateToken, async (req, res) => {
   try {
     const filter = { email: req.user.email };
     const update = { $set: { token: null } };
 
+    const existingUser = await User.findOne(filter);
+
+    if (!existingUser) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
     await User.findOneAndUpdate(filter, update);
 
-    res.status(204).end(); // Returnează statusul 204 No Content la succesul logout-ului
+    res.status(204).end();
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Logout error", error: error.message });
   }
 });
+
+// Current route
+// GET /users/current
+// Authorization: "Bearer {{token}}"
+router.get("/current", authenticateToken, async (req, res) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const { email, subscription } = req.user;
+
+    res.status(200).json({
+      email,
+      subscription,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).send("Internal Server Error");
+  }
+});
+
+// Adăug ruta pentru reînnoirea abonamentului
+router.patch("/", protectRoute, usersController.updateSubscription);
 
 module.exports = router;

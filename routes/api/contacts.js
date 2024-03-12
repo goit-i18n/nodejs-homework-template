@@ -11,4 +11,9 @@ router.put("/:id", contactsController.updateContact);
 router.delete("/:id", contactsController.deleteContact);
 router.patch("/:id/favorite", contactsController.updateStatusContact);
 
+// Ruta pentru paginarea contactelor
+router.get("/paginated", contactsController.getPaginatedContacts);
+
+// Ruta pentru filtrarea contactelor după câmpul favorite
+router.get("/filtered", contactsController.getFilteredContacts);
 module.exports = router;
