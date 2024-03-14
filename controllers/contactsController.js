@@ -78,6 +78,7 @@ exports.updateStatusContact = async (req, res) => {
   }
 };
 
+
 // Adaug funcția pentru paginare
 exports.getPaginatedContacts = async (req, res) => {
   try {
@@ -122,3 +123,4 @@ exports.getFilteredContacts = async (req, res) => {
     res.status(500).json({ message: error.message });
   }
 };
+
