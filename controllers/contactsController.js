@@ -77,3 +77,50 @@ exports.updateStatusContact = async (req, res) => {
     res.status(400).json({ message: error.message });
   }
 };
+
+
+// Adaug funcția pentru paginare
+exports.getPaginatedContacts = async (req, res) => {
+  try {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+
+    const startIndex = (page - 1) * limit;
+    const endIndex = page * limit;
+
+    const contacts = await Contact.find().skip(startIndex).limit(limit);
+
+    // Verific dacă există o pagină următoare
+    const totalContacts = await Contact.countDocuments();
+    const hasNextPage = endIndex < totalContacts;
+
+    res.json({
+      page,
+      limit,
+      totalContacts,
+      hasNextPage,
+      contacts,
+    });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Error fetching contacts", error: error.message });
+  }
+};
+
+// Adăug funcția pentru filtrarea contactelor după câmpul favorite
+exports.getFilteredContacts = async (req, res) => {
+  try {
+    const favoriteFilter = req.query.favorite === "true";
+
+    const filteredContacts = await Contact.find({
+      favorite: favoriteFilter,
+    }).exec();
+
+    res.json(filteredContacts);
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+
