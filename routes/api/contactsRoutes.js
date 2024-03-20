@@ -34,15 +34,24 @@ router.get("/:contactId", async (req, res, next) => {
 });
 
 router.post("/", async (req, res, next) => {
-  const { error } = contactSchema.validate(req.body);
+  const { error } = contactSchema.validate(req.body); // presupunând că ai contactValidationSchema definit
   if (error) {
-    return res.status(400).send({ message: error.details[0].message });
+    return res.status(400).json({ message: error.details[0].message });
   }
+  const { name, email, phone, favorite } = req.body; // Asigură-te că req.body există
+  console.log(name, email);
   try {
-    const newContact = await contactsController.addContact(req.body);
+    // Pasează obiectul req.body direct, deoarece structura așteptată se potrivește
+    const newContact = await contactsController.addContact(
+      name,
+      email,
+      phone,
+      favorite
+    );
+
     res.status(201).json(newContact);
   } catch (error) {
-    next(error);
+    next(error); // Tratează erorile în middleware-ul de erori
   }
 });
 
