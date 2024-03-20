@@ -1,8 +1,13 @@
 const Contact = require("../models/contact.js");
 
 const listContacts = async () => {
-  const contacts = await Contact.find({});
-  return contacts;
+  try {
+    const contacts = await Contact.find({});
+    return contacts;
+  } catch (error) {
+    console.error("Eroare la recuperarea contactelor:", error);
+    throw error;
+  }
 };
 
 const getContactById = async (contactId) => {

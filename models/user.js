@@ -21,12 +21,18 @@ const userSchema = new Schema({
     type: String,
     default: null,
   },
+  avatarURL: String,
 });
-
-userSchema.pre("save", async function () {
+userSchema.post("save", function (doc, next) {
+  console.log("new user was created", doc);
+  next();
+});
+userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 8);
   }
+  console.log("user about to be created & saved", this);
+  next();
 });
 
 const User = mongoose.model("User", userSchema);

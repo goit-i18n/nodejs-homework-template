@@ -4,17 +4,19 @@ const cors = require("cors");
 const connectDB = require("./db/db");
 const contactsRouter = require("./routes/api/contactsRoutes");
 const authRoutes = require("./routes/api/authRoutes");
+require("dotenv").config();
 
 connectDB();
 
 const app = express();
 
+app.set("view engine", "ejs");
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
-require("dotenv").config();
 app.use(logger(formatsLogger));
 app.use(cors());
 app.use(express.json());
 
+app.get("/", (req, res) => res.render("home"));
 app.use("/users", authRoutes);
 app.use("/api/contacts", contactsRouter);
 
