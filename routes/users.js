@@ -3,8 +3,14 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const Joi = require("joi");
 const User = require("../models/User");
-const STANDARD_ROLE = require("./constants");
 const dotenv = require("dotenv");
+const gravatar = require("gravatar");
+const fs = require("fs");
+const path = require("path");
+const Jimp = require("jimp");
+const axios = require("axios");
+// const https = require("https");
+
 const {
   protectRoute,
   authenticateToken,
@@ -15,11 +21,18 @@ dotenv.config();
 const router = express.Router();
 const saltRounds = 10;
 const jwtSecret = process.env.JWT_SECRET;
+const UPLOAD_DIR = path.join(__dirname, "..", "tmp");
+const AVATARS_DIR = path.join(__dirname, "..", "public", "avatars");
+// const AVATARS_URL = "/avatars";
 
 const joiSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
 });
+
+if (!fs.existsSync(UPLOAD_DIR)) {
+  fs.mkdirSync(UPLOAD_DIR);
+}
 
 router.get("/", async (req, res) => {
   res.status(200).json({ message: "Auth page" });
@@ -39,13 +52,19 @@ router.post("/signup", async (req, res) => {
 
     const { email, password } = req.body;
 
+    const avatar = gravatar.url(email, {
+      s: "200",
+      r: "pg",
+      d: "identicon",
+    });
+
     // The passsword should never be saved as plain text
     const hashedPassword = await bcrypt.hash(password, saltRounds);
 
     const newUser = new User({
       email,
       password: hashedPassword,
-      role: STANDARD_ROLE,
+      avatarURL: avatar,
     });
 
     await newUser.save();
@@ -162,5 +181,44 @@ router.get("/current", authenticateToken, async (req, res) => {
 
 // Adăug ruta pentru reînnoirea abonamentului
 router.patch("/", protectRoute, usersController.updateSubscription);
+
+// PATCH /users/avatars
+// Content-Type: multipart/form-data
+// Authorization: "Bearer {{token}}"
+router.patch("/avatars", authenticateToken, async (req, res) => {
+  try {
+    const { email } = req.user;
+    const { avatarURL } = req.body;
+
+    if (!email) {
+      return res.status(401).json({ message: "Not authorized" });
+    }
+
+    const fileName = `${req.user._id}_${Date.now()}.jpg`;
+    const tmpFilePath = path.join(UPLOAD_DIR, fileName);
+    const avatarFilePath = path.join(AVATARS_DIR, fileName);
+
+    const avatarURLFull = gravatar.url(avatarURL, { protocol: "https" });
+
+    const response = await axios.get(avatarURLFull, {
+      responseType: "arraybuffer",
+    });
+    fs.writeFileSync(tmpFilePath, Buffer.from(response.data, "binary"));
+
+    const image = await Jimp.read(tmpFilePath);
+    await image.resize(250, 250).writeAsync(tmpFilePath);
+
+    fs.renameSync(tmpFilePath, avatarFilePath);
+
+    await User.findOneAndUpdate({ email }, { avatarURL: fileName });
+
+    res.status(200).json({ message: "Avatar updated successfully" });
+  } catch (error) {
+    console.error(error);
+    res
+      .status(500)
+      .json({ message: "Error updating avatar", error: error.message });
+  }
+});
 
 module.exports = router;
