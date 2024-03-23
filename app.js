@@ -4,10 +4,8 @@ const cors = require("cors");
 const connectDB = require("./db/db");
 const contactsRouter = require("./routes/api/contactsRoutes");
 const authRoutes = require("./routes/api/authRoutes");
-require("dotenv").config();
-
+const emailRoute = require("./routes/api/emailRoute");
 connectDB();
-
 const app = express();
 
 app.use(express.json());
@@ -19,7 +17,7 @@ app.use(cors());
 app.get("/", (req, res) => res.render("home"));
 app.use("/users", authRoutes);
 app.use("/api/contacts", contactsRouter);
-
+app.use("/api", emailRoute);
 app.use((req, res) => {
   res.status(404).json({ message: "Not found" });
 });

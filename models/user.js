@@ -22,7 +22,13 @@ const userSchema = new Schema({
     default: null,
   },
   avatarURL: String,
+
+  verify: {
+    type: Boolean,
+    default: false,
+  },
 });
+
 userSchema.post("save", function (doc, next) {
   console.log("new user was created", doc);
   next();

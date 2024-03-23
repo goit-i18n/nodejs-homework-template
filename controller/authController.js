@@ -1,16 +1,14 @@
 const User = require("../models/user");
-const jwtSecret = process.env.JWT_SECRET;
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const Joi = require("joi");
 const gravatar = require("gravatar");
-const saltRounds = 10;
+const sendVerificationEmail = require("../controller/emailController");
 
 const userSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().required(),
   subscription: Joi.string().required(),
-  token: Joi.string().required(),
 });
 
 const signup = async (req, res) => {
@@ -25,23 +23,27 @@ const signup = async (req, res) => {
 
     const avatarURL = gravatar.url(email, { s: "200", r: "pg", d: "mm" });
 
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
-
     const user = new User({
       email,
-      password: hashedPassword,
+      password,
       avatarURL,
     });
-    await user.save();
 
+    await user.save();
     const token = jwt.sign({ userId: user._id }, " jwtSecret", {
       expiresIn: "1h",
     });
 
     user.token = token;
     await user.save();
-
-    res.status(201).json({ user: user._id });
+    const verificationLink = `http://localhost:3000/api/verify-email?token=${token}`;
+    await sendVerificationEmail(email, verificationLink);
+    res.status(201).json({
+      user: user._id,
+      token,
+      message:
+        "User registered successfully. Please check your email to verify.",
+    });
   } catch (error) {
     if (error.code === 11000) {
       res.status(409).json({ message: "Email in use" });
@@ -62,7 +64,7 @@ const login = async (req, res) => {
       return res.status(401).json({ message: "Invalid credentials" });
     }
 
-    const token = jwt.sign({ userId: user._id }, jwtSecret, {
+    const token = jwt.sign({ userId: user._id }, process.env.JWT_SECRET, {
       expiresIn: "1h",
     });
     user.token = token;
