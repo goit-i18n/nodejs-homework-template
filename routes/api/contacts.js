@@ -1,25 +1,23 @@
-const express = require('express')
+const express = require("express");
+const router = express.Router();
+const contactsController = require("../../controllers/contactsController");
 
-const router = express.Router()
+const { protectRoute } = require("../../middleware/authMiddleware");
 
-router.get('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.use(protectRoute);
 
-router.get('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
 
-router.post('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+router.get("/", contactsController.getAllContacts);
+router.post("/", contactsController.createContact);
+router.put("/:id", contactsController.updateContact);
+router.delete("/:id", contactsController.deleteContact);
+router.patch("/:id/favorite", contactsController.updateStatusContact);
 
-router.delete('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
 
-router.put('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
+// Ruta pentru paginarea contactelor
+router.get("/paginated", contactsController.getPaginatedContacts);
 
-module.exports = router
+
+// Ruta pentru filtrarea contactelor după câmpul favorite
+router.get("/filtered", contactsController.getFilteredContacts);
+module.exports = router;
