@@ -1,19 +1,52 @@
-// const fs = require('fs/promises')
+import contacts from "./contacts.json" assert { type: "json" };
+import color from "colors";
+import { nanoid } from "nanoid";
 
-const listContacts = async () => {}
+async function listContacts() {
+  return contacts;
+}
 
-const getContactById = async (contactId) => {}
+async function getContactById(contactId) {
+  const contact = contacts.find((contact) => contact.id === contactId);
+  console.log(contact);
+  return contact;
+}
 
-const removeContact = async (contactId) => {}
+async function removeContact(contactId) {
+  const index = contacts.findIndex((contact) => contact.id === contactId);
+  if (index !== -1) {
+    return contacts.splice(index, 1)[0];
+  }
+  return null;
+}
 
-const addContact = async (body) => {}
+async function addContact(body) {
+  const newContact = {
+    id: nanoid(),
+    ...body,
+  };
+  contacts.push(newContact);
+  return newContact;
+}
 
-const updateContact = async (contactId, body) => {}
+async function updateContact(contactId, body) {
+  const index = contacts.findIndex((c) => c.id === contactId);
+  if (index !== -1) {
+    const updatedContact = { ...contacts[index], ...body };
+    contacts[index] = updatedContact;
+    return updatedContact;
+  }
+  return null;
+}
 
-module.exports = {
+const contactsService = {
   listContacts,
   getContactById,
   removeContact,
   addContact,
   updateContact,
-}
+};
+
+getContactById("qdggE76Jtbfd9eWJHrssH");
+
+export default contactsService;
