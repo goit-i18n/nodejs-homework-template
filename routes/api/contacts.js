@@ -1,12 +1,5 @@
 import express from "express";
-import contactsService from "../../models/contacts.js";
-import Joi from "joi";
-
-const contactSchema = Joi.object({
-  name: Joi.string().min(3).required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string().required(),
-});
+import contactsController from "../../controller/contactsController.js";
 
 const router = express.Router();
 const STAUS_CODES = {
@@ -20,7 +13,7 @@ const STAUS_CODES = {
 
 router.get("/", async (req, res, next) => {
   try {
-    const contacts = await contactsService.listContacts();
+    const contacts = await contactsController.listContacts();
     console.dir(contacts);
     res
       .status(STAUS_CODES.succes)
@@ -32,17 +25,17 @@ router.get("/", async (req, res, next) => {
 
 router.get("/:contactId", async (req, res, next) => {
   try {
-    const contact = await contactsService.getContactById(req.params.contactId);
-
+    const contact = await contactsController.getContactById(
+      req.params.contactId
+    );
+    console.dir(contact);
     if (!contact) {
       res
         .status(STAUS_CODES.notFound)
         .json({ message: "Contact was not found" });
       return;
     }
-
     console.dir(contact);
-
     res
       .status(STAUS_CODES.created)
       .json({ message: "Contact returned successfully", data: contact });
@@ -53,11 +46,15 @@ router.get("/:contactId", async (req, res, next) => {
 
 router.post("/", async (req, res) => {
   try {
-    const { error, value } = contactSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
+    const isValid = checkIsContactValid(req.body);
+
+    if (!isValid) {
+      throw new Error("Please fill out all required fields and try again ");
     }
-    const newContact = await contactsService.addContact(value);
+
+    const contact = req.body;
+    const newContact = await contactsController.addContact(contact);
+    console.dir(newContact);
     res.status(201).json(newContact);
   } catch (error) {
     res.status(500).json({ message: `Server error: ${error.message}` });
@@ -67,11 +64,11 @@ router.post("/", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   try {
     const { id } = req.params;
-    const contact = await contactsService.removeContact(id);
+    const contact = await contactsController.removeContact(id);
     if (!contact) {
       return res.status(404).json({ message: "Not found" });
     }
-    res.status(200).json({ message: "contact deleted" });
+    res.status(200).json({ message: "Contact deleted" });
   } catch (error) {
     res.status(500).json({ message: `Server error: ${error.message}` });
   }
@@ -79,16 +76,16 @@ router.delete("/:id", async (req, res) => {
 
 router.put("/:id", async (req, res) => {
   try {
-    const { error, value } = contactSchema.validate(req.body, {
-      presence: "optional",
-    });
-    if (error) {
-      return res.status(400).json({ message: error.details[0].message });
+    const isValid = validateContact(req.body);
+    if (!isValid) {
+      throw new Error("Something went wrong");
     }
-    const updatedContact = await contactsService.updateContact(
+    const contact = req.body;
+    const updatedContact = await contactsController.updateContact(
       req.params.id,
-      value
+      contact
     );
+    console.dir(updatedContact);
     if (!updatedContact) {
       return res.status(404).json({ message: "Not found" });
     }
@@ -97,4 +94,50 @@ router.put("/:id", async (req, res) => {
     res.status(500).json({ message: `Server error: ${error.message}` });
   }
 });
+
+router.patch("/:id/favorite", async (req, res) => {
+  try {
+    const isValid = checkIsContactValid(req.body);
+    if (!isValid) {
+      throw new Error("Something went wrong");
+    }
+    const contact = req.body;
+    const updatedContact = await contactsController.updateContact(
+      req.params.id,
+      contact
+    );
+    console.dir(updatedContact);
+    if (!updatedContact) {
+      return res.status(404).json({ message: "Not found" });
+    }
+    res.status(200).json({ message: "Contact updated", data: updatedContact });
+  } catch (error) {
+    res.status(500).json({ message: `Server error: ${error.message}` });
+  }
+});
+
+function validateContact(contact) {
+  return (
+    contact?.name &&
+    contact?.email &&
+    contact?.phone &&
+    contact?.favorite !== undefined
+  );
+}
+
+function checkIsContactValid(contact) {
+  if (contact.name && typeof contact.name !== "string") {
+    return false;
+  }
+  if (contact.email && typeof contact.email !== "string") {
+    return false;
+  }
+  if (contact.phone && typeof contact.phone !== "string") {
+    return false;
+  }
+  if (contact.favorite !== undefined && typeof contact.favorite !== "boolean") {
+    return false;
+  }
+  return true;
+}
 export default router;
