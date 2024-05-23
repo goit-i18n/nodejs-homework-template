@@ -4,10 +4,14 @@ import logger from 'morgan'
 import cors from 'cors'
 
 import contactsRouter from './routes/api/contacts.js'
+import connectToDb from './utils/connectToDb.js'
 
 const app = express()
 
 const formatsLogger = app.get('env') === 'development' ? 'dev' : 'short'
+
+
+connectToDb();
 
 app.use(logger(formatsLogger))
 app.use(cors())

@@ -1,6 +1,5 @@
 import express from 'express';
-import ContactService from '../../models/contacts.js';
-import Joi from 'joi';  // Adăugarea importului Joi
+import ContactsController from '../../controller/contactsController.js';
 
 const router = express.Router();
 const STATUS_CODES = {
@@ -11,24 +10,15 @@ const STATUS_CODES = {
   error: 500,
 }
 
-// Definirea schemei Joi pentru validarea datelor contactului
-const contactSchema = Joi.object({
-  name: Joi.string().min(3).required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string().min(3).required(),
-});
-
-// Funcție care validează un contact folosind schema definită
-function validateContact(contact) {
-  const { error } = contactSchema.validate(contact);
-  return error ? error.details[0].message : null;
-}
-
 // Ruta pentru redarea listei de contacte - GET
 router.get('/', async (req, res) => {
   try {
-    const contacts = await ContactService.listContacts();
-    res.status(STATUS_CODES.success).json({ message: 'Lista a fost returnata cu succes', data: contacts });
+    const contacts = await ContactsController.listContacts();
+    console.dir(contacts);
+    
+    res
+    .status(STATUS_CODES.success)
+    .json({ message: 'Lista a fost returnata cu succes', data: contacts });
   } catch (error) {
     res.status(STATUS_CODES.error).json({ message: error.message });
   }
@@ -37,7 +27,7 @@ router.get('/', async (req, res) => {
 // Ruta pentru căutare contact după ID - GET
 router.get('/:id', async (req, res) => {
   try {
-    const contact = await ContactService.getContactById(req.params.id);
+    const contact = await ContactsController.getContactsById(req.params.id);
     if (!contact) {
       return res.status(STATUS_CODES.notFound).json({ message: 'Contactul nu a fost gasit' });
     }
@@ -49,13 +39,17 @@ router.get('/:id', async (req, res) => {
 
 // Ruta pentru adăugare contact - POST
 router.post('/', async (req, res) => {
-  const errorMessage = validateContact(req.body);
-  if (errorMessage) {
-    return res.status(400).json({ message: errorMessage });
-  }
   try {
-    const contact = await ContactService.addContact(req.body);
-    res.status(STATUS_CODES.created).json({ message: `Contactul ${contact.name} a fost adaugat cu succes`, data: contact });
+    const isValid = checkIsContactValid(req.body);
+    if (!isValid) {
+      throw new Error("Contactul introdus nu are toate campurile necesare.");
+    }
+
+    const contact = req.body;
+    await ContactsController.addContact(contact);
+    res
+    .status(STATUS_CODES.created)
+    .json({ message: `Contactul ${contact.name} a fost adaugat cu succes`, data: contact });
   } catch (error) {
     res.status(STATUS_CODES.error).json({ message: error.message });
   }
@@ -64,8 +58,10 @@ router.post('/', async (req, res) => {
 // Ruta pentru ștergerea contactului - DELETE
 router.delete('/:id', async (req, res) => {
   try {
-    await ContactService.removeContact(req.params.id);
-    res.status(200).json({ message: 'Contactul a fost sters' });
+    await ContactsController.deleteContact(req.params.id);
+    res
+    .status(200)
+    .json({ message: 'Contactul a fost sters' });
   } catch (error) {
     res.status(STATUS_CODES.error).json({ message: 'Contactul nu a fost gasit' });
   }
@@ -73,12 +69,13 @@ router.delete('/:id', async (req, res) => {
 
 // Ruta pentru modificarea unui contact - PUT
 router.put('/:id', async (req, res) => {
-  const errorMessage = validateContact(req.body);
-  if (errorMessage) {
-    return res.status(400).json({ message: errorMessage });
-  }
   try {
-    const updatedContact = await ContactService.updateContact(req.params.id, req.body);
+    const isValid = checkIsContactValid(req.body);
+    if (!isValid) {
+      throw new Error("Contactul introdus nu este valid.");
+    }
+
+    const updatedContact = await ContactsController.updateContact(req.params.id, req.body);
     if (!updatedContact) {
       return res.status(STATUS_CODES.notFound).json({ message: 'Contactul nu a fost gasit' });
     }
@@ -88,4 +85,32 @@ router.put('/:id', async (req, res) => {
   }
 });
 
+// Ruta pentru actualizarea stării contactului - PATCH
+router.patch('/:contactId/favorite', async (req, res) => {
+  const { favorite } = req.body;
+  if (favorite === undefined) {
+      return res.status(400).json({ message: "missing field favorite" });
+  }
+
+  try {
+      const updatedContact = await ContactsController.updateStatusContact(req.params.contactId, favorite);
+      res
+      .status(200)
+      .json({ message: 'Favorite status updated successfully', data: updatedContact });
+  } catch (error) {
+      if (error.message === 'Contact not found') {
+          res.status(404).json({ message: 'Not found' });
+      } else {
+          res.status(500).json({ message: error.message });
+      }
+  }
+});
+
+function checkIsContactValid(contact) {
+  if (!contact?.name || !contact?.email || !contact?.phone) {
+    return false;
+  }
+
+  return true;
+}
 export default router;
