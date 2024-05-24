@@ -1,6 +1,7 @@
 {
   "name": "template",
   "version": "0.0.0",
+  "type": "module",
   "private": true,
   "scripts": {
     "start": "cross-env NODE_ENV=production node ./server.js",
@@ -10,9 +11,11 @@
   },
   "dependencies": {
     "cors": "2.8.5",
-    "cross-env": "7.0.3",
+    "cross-env": "^7.0.3",
     "express": "4.17.1",
     "joi": "^17.13.1",
+    "mongodb": "^6.6.2",
+    "mongoose": "^8.4.0",
     "morgan": "1.10.0",
     "uuid": "^9.0.1"
   },

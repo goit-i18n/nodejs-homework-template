@@ -1,148 +1,137 @@
-const express = require("express");
-const { v4: uuidv4 } = require("uuid");
-const contactsServices = require("../../models/contacts");
-const router = express.Router();
+import express from "express";
+import contactsController from "../../controller/contactsController.js";
+import Joi from "joi";
 
-const Joi = require("joi");
-const schema = Joi.object({
-  name: Joi.string().min(3).max(30).required(),
-  email: Joi.string()
-    .email({ minDomainSegments: 2, tlds: { allow: ["com", "net", "ro"] } })
+const contactSchema = Joi.object({
+  name: Joi.string().min(3).required(),
+  email: Joi.string().email().required(),
+  phone: Joi.string()
+    .pattern(new RegExp("^[0-9]{3}-[0-9]{3}-[0-9]{4}$"))
     .required(),
-  phone: Joi.string().alphanum().min(10).max(20).required(),
 });
+
+const favoriteSchema = Joi.object({
+  favorite: Joi.boolean().required(),
+});
+
+const router = express.Router();
 const STATUS_CODES = {
   success: 200,
   created: 201,
   deleted: 204,
-  badRequest: 400,
   notFound: 404,
   error: 500,
 };
 
-router.get("/", async (req, res, next) => {
+// GET localhost:3000/api/contacts
+router.get("/", async (req, res) => {
   try {
-    const contactsList = await contactsServices.listContacts();
-    res.status(STATUS_CODES.success).json({
-      data: contactsList,
+    const contacts = await contactsController.listContacts();
+    res
+      .status(STATUS_CODES.success)
+      .json({ message: "Lista a fost returnata cu succes", data: contacts });
+  } catch (error) {
+    res.status(STATUS_CODES.error).json({ message: `${error}` });
+  }
+});
+
+// GET localhost:3000/api/contacts/:id
+router.get("/:id", async (req, res) => {
+  try {
+    const contact = await contactsController.getContactById(req.params.id);
+    if (!contact) {
+      res
+        .status(STATUS_CODES.notFound)
+        .json({ message: "Contactul nu a fost gasit" });
+      return;
+    }
+    res
+      .status(STATUS_CODES.success)
+      .json({ message: "Contactul a fost returnat cu succes", data: contact });
+  } catch (error) {
+    res.status(STATUS_CODES.error).json({ message: `${error}` });
+  }
+});
+
+// POST localhost:3000/api/contacts/
+router.post("/", async (req, res) => {
+  try {
+    const { error, value } = contactSchema.validate(req.body);
+    if (error) {
+      return res.status(400).json({ message: error.details[0].message });
+    }
+    const newContact = await contactsController.addContact(value);
+    res.status(STATUS_CODES.created).json(newContact);
+  } catch (error) {
+    res
+      .status(STATUS_CODES.error)
+      .json({ message: `Server error: ${error.message}` });
+  }
+});
+
+// DELETE localhost:3000/api/contacts/:id
+router.delete("/:id", async (req, res) => {
+  try {
+    const contact = await contactsController.removeContact(req.params.id);
+    if (!contact) {
+      return res.status(STATUS_CODES.notFound).json({ message: "Not found" });
+    }
+    res.status(STATUS_CODES.deleted).json({ message: "Contact deleted" });
+  } catch (error) {
+    res
+      .status(STATUS_CODES.error)
+      .json({ message: `Server error: ${error.message}` });
+  }
+});
+
+// PUT localhost:3000/api/contacts/:id
+router.put("/:id", async (req, res) => {
+  try {
+    const { error, value } = contactSchema.validate(req.body, {
+      presence: "optional",
     });
-  } catch (error) {
-    respondWithError(res, error);
-  }
-});
-
-router.get("/:contactId", async (req, res, next) => {
-  try {
-    const contact = await contactsServices.getContactById(req.params.contactId);
-    if (contact) {
-      res.status(STATUS_CODES.success).json({
-        data: contact,
-      });
-    } else {
-      res.status(STATUS_CODES.notFound).json({
-        message: "The contact was not found.",
-      });
-    }
-  } catch (error) {
-    respondWithError(res, error);
-  }
-});
-
-router.post("/", async (req, res, next) => {
-  try {
-    const { error, value } = schema.validate(req.body, { abortEarly: false });
     if (error) {
-      let errors = error.details;
-
-      let message = "";
-      for (i = 1; i <= errors.length; i++) {
-        message += errors[i - 1].message;
-        if (i < errors.length) message += ", ";
-      }
-      res.status(STATUS_CODES.badRequest).json({
-        message: message,
-      });
-    } else {
-      const contact = {
-        id: uuidv4(),
-        ...req.body,
-      };
-      await contactsServices.addContact(contact);
-      res.status(STATUS_CODES.created).json({
-        message: `The contact has been successfully added.`,
-        data: contact,
-      });
+      return res.status(400).json({ message: error.details[0].message });
     }
+    const updatedContact = await contactsController.updateContact(
+      req.params.id,
+      value
+    );
+    if (!updatedContact) {
+      return res.status(STATUS_CODES.notFound).json({ message: "Not found" });
+    }
+    res
+      .status(STATUS_CODES.success)
+      .json({ message: "Contact updated", data: updatedContact });
   } catch (error) {
-    respondWithError(res, error);
+    res
+      .status(STATUS_CODES.error)
+      .json({ message: `Server error: ${error.message}` });
   }
 });
 
-router.delete("/:contactId", async (req, res, next) => {
+// PATCH localhost:3000/api/contacts/:id/favorite
+router.patch("/:id/favorite", async (req, res) => {
   try {
-    const result = await contactsServices.removeContact(req.params.contactId);
-    if (!result) {
-      res.status(STATUS_CODES.notFound).json({
-        message: "The contact was not found.",
-      });
-    } else {
-      res.status(STATUS_CODES.success).json({
-        message: "The contact has been successfully deleted.",
-      });
-    }
-  } catch (error) {
-    respondWithError(res, error);
-  }
-});
-
-router.put("/:contactId", async (req, res, next) => {
-  try {
-    const { error, value } = schema.validate(req.body, { abortEarly: false });
+    const { error, value } = favoriteSchema.validate(req.body);
     if (error) {
-      let errors = error.details;
-
-      let message = "";
-      for (i = 1; i <= errors.length; i++) {
-        message += errors[i - 1].message;
-        if (i < errors.length) message += ", ";
-      }
-      res.status(STATUS_CODES.badRequest).json({
-        message: message,
-      });
-    } else {
-      const result = await contactsServices.updateContact(
-        req.params.contactId,
-        req.body
-      );
-      if (!result) {
-        res.status(STATUS_CODES.notFound).json({
-          message: "The contact was not found.",
-        });
-      }
-      res.status(STATUS_CODES.success).json({
-        message: `The contact has been successfully updated.`,
-        data: result,
-      });
+      return res.status(400).json({ message: "missing field favorite" });
     }
+    const updatedContact = await contactsController.updateStatusContact(
+      req.params.id,
+      value
+    );
+    if (!updatedContact) {
+      return res.status(STATUS_CODES.notFound).json({ message: "Not found" });
+    }
+    res
+      .status(STATUS_CODES.success)
+      .json({ message: "Contact updated", data: updatedContact });
   } catch (error) {
-    respondWithError(res, error);
+    res
+      .status(STATUS_CODES.error)
+      .json({ message: `Server error: ${error.message}` });
   }
 });
-// Validates Contact Fields
 
-function checkIsValidContact(contact) {
-  if (!contact?.name || !contact?.email || !contact?.phone) {
-    return false;
-  }
-  return true;
-}
-
-/**
- * Handles Error Cases
- */
-function respondWithError(res, error) {
-  console.error(error);
-  res.status(STATUS_CODES.error).json({ message: `${error}` });
-}
-
-module.exports = router;
+export default router;
