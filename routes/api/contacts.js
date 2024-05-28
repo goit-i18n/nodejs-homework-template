@@ -87,7 +87,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-/* PUT localhost:3000/api/contacts/:id */
+// PUT localhost:3000/api/contacts/:id
 router.put("/:contactId", async (req, res) => {
   try {
     const { error } = updateSchema.validate(req.body);
