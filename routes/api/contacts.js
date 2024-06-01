@@ -1,25 +1,20 @@
 import express from "express";
 import contactsController from "../../controller/contactsController.js";
+import { STATUS_CODES } from "../../utils/constants.js";
+import authController from "../../controller/authController.js";
+import "../../passport.js";
 
 const router = express.Router();
-const STAUS_CODES = {
-  succes: 200,
-  created: 201,
-  deleted: 204,
-  notFound: 404,
-  badRequest: 400,
-  error: 500,
-};
 
-router.get("/", async (req, res, next) => {
+router.get("/", authController.validateAuth, async (req, res, next) => {
   try {
     const contacts = await contactsController.listContacts();
     console.dir(contacts);
     res
-      .status(STAUS_CODES.succes)
+      .status(STATUS_CODES.success)
       .json({ message: "The list was successfully returned", data: contacts });
   } catch (error) {
-    res.status(STAUS_CODES.error).json({ message: `${error}` });
+    res.status(STATUS_CODES.error).json({ message: `${error}` });
   }
 });
 
@@ -31,16 +26,16 @@ router.get("/:contactId", async (req, res, next) => {
     console.dir(contact);
     if (!contact) {
       res
-        .status(STAUS_CODES.notFound)
+        .status(STATUS_CODES.notFound)
         .json({ message: "Contact was not found" });
       return;
     }
     console.dir(contact);
     res
-      .status(STAUS_CODES.created)
+      .status(STATUS_CODES.created)
       .json({ message: "Contact returned successfully", data: contact });
   } catch (error) {
-    res.status(STAUS_CODES.error).json({ message: `${error}` });
+    res.status(STATUS_CODES.error).json({ message: `${error}` });
   }
 });
 
