@@ -1,8 +1,15 @@
+<<<<<<< Updated upstream
 const express = require('express')
 const logger = require('morgan')
 const cors = require('cors')
 
 const contactsRouter = require('./routes/api/contacts')
+=======
+import express from "express";
+import logger from "morgan";
+import cors from "cors";
+import contactsRouter from "./routes/api/contacts.js";
+>>>>>>> Stashed changes
 
 const app = express()
 
