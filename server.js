@@ -1,5 +1,18 @@
-const app = require("./app");
+const express = require('express');
+const morgan = require('morgan');
+const cors = require('cors');
+const contacts = require('./routes/contacts');
 
-app.listen(3000, () => {
-  console.log("Server is running. Use our API on port: 3000");
+const app = express();
+
+app.use(morgan('dev'));
+app.use(cors());
+app.use(express.json());
+
+app.use('/contacts', contacts);
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
 });
+
