@@ -2,6 +2,7 @@ import express from "express";
 import authController from "../../controller/authController.js";
 import { STATUS_CODES } from "../../utils/constants.js";
 import User from "../../models/users.js";
+import fileController from "../../controller/fileController.js";
 
 const router = express.Router();
 
@@ -89,29 +90,37 @@ router.get("/logout", authController.validateAuth, async (req, res, next) => {
   }
 });
 
-
 // localhost:3000/api/auth/users/current
-router.get(
-  "/users/current",
-  authController.validateAuth,
-  async (req, res, next) => {
+router.get("/current", authController.validateAuth, async (req, res, next) => {
+  try {
+    const header = req.get("authorization");
+    if (!header) {
+      throw new Error("Authorization required");
+    }
+
+    const token = header.split(" ")[1];
+    const payload = authController.getPayloadFromJWT(token);
+
+    const user = await User.findOne({ email: payload.data.email });
+
+    res.status(STATUS_CODES.success).json({
+      email: user.email,
+      user: user.subscription,
+    });
+  } catch (error) {
+    throw new Error("There was a problem with your request");
+  }
+});
+
+router.patch(
+  "/avatars",
+  [authController.validateAuth, fileController.uploadFile],
+  async (req, res) => {
     try {
-      const header = req.get("authorization");
-      if (!header) {
-        throw new Error("Authorization required");
-      }
-
-      const token = header.split(" ")[1];
-      const payload = authController.getPayloadFromJWT(token);
-
-      const user = await User.findOne({ email: payload.data.email });
-
-      res.status(STATUS_CODES.success).json({
-        email: user.email,
-        user: user.subscription,
-      });
+      const response = await fileController.processAvatar(req, res);
+      res.status(STATUS_CODES.success).json(response);
     } catch (error) {
-      throw new Error("There was a problem with your request");
+      throw new Error(error);
     }
   }
 );

@@ -4,6 +4,7 @@ import jwt from "jsonwebtoken";
 import passport from "passport";
 import "dotenv/config";
 import { STATUS_CODES } from "../utils/constants.js";
+import gravatar from "gravatar";
 
 const secretForToken = process.env.TOKEN_SECRET;
 
@@ -40,12 +41,13 @@ async function singUp(data) {
   const saltRounds = 10;
   try {
     let encryptedPassword = await bcrypt.hash(data.password, saltRounds);
-
+    const userAvatar = gravatar.url(data.email);
     const newUser = new User({
       password: encryptedPassword,
       email: data.email,
       subscription: "starter",
       token: null,
+      avatarURL: userAvatar,
     });
 
     return User.create(newUser);
