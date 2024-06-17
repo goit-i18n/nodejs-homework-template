@@ -1,28 +1,34 @@
+
 import express from 'express';
 import ContactsController from '../../controller/contactsController.js';
+import { STATUS_CODES } from '../../utils/constants.js';
+import passport from "passport";
+import "../../passport.js";
+import AuthController from '../../controller/authController.js';
 
 const router = express.Router();
-const STATUS_CODES = {
-  success: 200,  
-  created: 201,  
-  noContent: 204,
-  notFound: 404, 
-  error: 500,
-}
+
 
 // Ruta pentru redarea listei de contacte - GET
-router.get('/', async (req, res) => {
+router.get(
+  '/', 
+  AuthController.validateAuth, 
+  async (req, res) => {
   try {
     const contacts = await ContactsController.listContacts();
-    console.dir(contacts);
-    
+           
     res
     .status(STATUS_CODES.success)
     .json({ message: 'Lista a fost returnata cu succes', data: contacts });
   } catch (error) {
-    res.status(STATUS_CODES.error).json({ message: error.message });
+    respondWithError(res, error);
   }
 });
+
+function respondWithError(res, error) {
+  console.error(error);
+  res.status(STATUS_CODES.error).json({ message: error.message });
+}
 
 // Ruta pentru căutare contact după ID - GET
 router.get('/:id', async (req, res) => {
