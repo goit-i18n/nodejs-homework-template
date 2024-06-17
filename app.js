@@ -2,7 +2,11 @@ import express from "express";
 import logger from "morgan";
 import cors from "cors";
 
+<<<<<<< Updated upstream
 import contactsRouter from "./routes/api/contacts";
+=======
+import contactsRouter from "./routes/api/contacts.js";
+>>>>>>> Stashed changes
 
 const app = express();
 
