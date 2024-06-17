@@ -10,12 +10,13 @@ const ContactsController = {
     updateStatusContact
 }
 
-async function listContacts() {
+async function listContacts(ownerId) {
     console.log('---List contacts ---')
     try {
-        return Contact.find();
+        return Contact.find({ owner: ownerId });
     } catch (error) {
-        console.error(error);
+        console.error('Error listing contacts:', error);
+        throw error;
     }
     
 }
