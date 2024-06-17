@@ -1,3 +1,5 @@
+// import fs from "fs/promises";
+// import { nanoid } from "nanoid";
 import contacts from "./contacts.json" assert { type: "json" };
 import { v4 as uuidv4 } from "uuid";
 

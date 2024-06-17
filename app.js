@@ -1,16 +1,26 @@
 import express from "express";
 import logger from "morgan";
 import cors from "cors";
+import mongoose from "mongoose";
 
-<<<<<<< Updated upstream
-import contactsRouter from "./routes/api/contacts";
-=======
 import contactsRouter from "./routes/api/contacts.js";
->>>>>>> Stashed changes
 
 const app = express();
 
 const formatsLogger = app.get("env") === "development" ? "dev" : "short";
+
+async function connectToDb() {
+	try {
+		await mongoose.connect(
+			"mongodb+srv://oxanaslivinschi:usLBNFZbEgWPklwB@cluster0.xsdxfkp.mongodb.net/db-contacts"
+		);
+		console.log("Conectat la baza de date cu succes.");
+	} catch (error) {
+		console.error(error);
+		process.exit(1);
+	}
+}
+connectToDb();
 
 app.use(logger(formatsLogger));
 app.use(cors());
