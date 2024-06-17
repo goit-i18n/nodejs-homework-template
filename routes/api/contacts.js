@@ -1,20 +1,12 @@
+// routes/contacts.js
 import express from "express";
-import contactsService from "../../models/contacts.js";
-import Joi from "joi";
+import contactsController from "../../controller/contactsController.js";
 
 const router = express.Router();
 
-const contactSchema = Joi.object({
-	name: Joi.string().min(1).required(),
-	email: Joi.string().email().required(),
-	phone: Joi.string()
-		.pattern(/^\(\d{3}\) \d{3}-\d{4}$/)
-		.required(),
-});
-
-router.get("/", async (req, res, next) => {
+router.get("/", async (req, res) => {
 	try {
-		const contacts = await contactsService.listContacts();
+		const contacts = await contactsController.listContacts();
 		console.dir(contacts);
 		res
 			.status(200)
@@ -25,9 +17,11 @@ router.get("/", async (req, res, next) => {
 	}
 });
 
-router.get("/:contactId", async (req, res, next) => {
+router.get("/:contactId", async (req, res) => {
 	try {
-		const contact = await contactsService.getById(req.params.contactId);
+		const contact = await contactsController.getContactsById(
+			req.params.contactId
+		);
 		if (!contact) {
 			return res.status(404).json({ message: "Contactul nu a fost gasit" });
 		}
@@ -41,18 +35,19 @@ router.get("/:contactId", async (req, res, next) => {
 	}
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", async (req, res) => {
 	try {
-		const { error } = contactSchema.validate(req.body);
+		const { error } = contactsController.validateContact(req.body);
 		if (error) {
 			return res
 				.status(400)
 				.json({ message: `Validation error: ${error.details[0].message}` });
 		}
 
-		await contactsService.addContact(req.body);
+		const newContact = await contactsController.addContact(req.body);
 		res.status(201).json({
-			message: `Contactul ${req.body.name} a fost adaugat cu succes`,
+			message: `Contactul ${newContact.name} a fost adaugat cu succes`,
+			data: newContact,
 		});
 	} catch (error) {
 		console.error(error);
@@ -60,9 +55,9 @@ router.post("/", async (req, res, next) => {
 	}
 });
 
-router.put("/:contactId", async (req, res, next) => {
+router.put("/:contactId", async (req, res) => {
 	try {
-		const { error } = contactSchema.validate(req.body);
+		const { error } = contactsController.validateContact(req.body);
 		if (error) {
 			return res
 				.status(400)
@@ -70,7 +65,7 @@ router.put("/:contactId", async (req, res, next) => {
 		}
 
 		const contactId = req.params.contactId;
-		const updatedContact = await contactsService.updateContact(
+		const updatedContact = await contactsController.updateContact(
 			contactId,
 			req.body
 		);
@@ -89,20 +84,51 @@ router.put("/:contactId", async (req, res, next) => {
 	}
 });
 
-router.delete("/:contactId", async (req, res, next) => {
+router.delete("/:contactId", async (req, res) => {
 	try {
 		const contactId = req.params.contactId;
-		const contact = await contactsService.getContactById(contactId);
+		const contact = await contactsController.getContactsById(contactId);
 
 		if (!contact) {
 			return res.status(404).json({ message: "Contactul nu a fost gasit" });
 		}
 
-		await contactsService.removeContact(contactId);
+		await contactsController.deleteContact(contactId);
 
 		res
 			.status(200)
 			.json({ message: `Contactul cu ID ${contactId} a fost sters cu succes` });
+	} catch (error) {
+		console.error(error);
+		res.status(500).json({ message: `Server error: ${error.message}` });
+	}
+});
+
+router.patch("/:contactId/favorite", async (req, res) => {
+	const { contactId } = req.params;
+	const { favorite } = req.body;
+
+	const { error } = contactsController.validateFavorite(req.body);
+	if (error) {
+		return res
+			.status(400)
+			.json({ message: `Validation error: ${error.details[0].message}` });
+	}
+
+	try {
+		const updatedContact = await contactsController.updateStatusContact(
+			contactId,
+			{ favorite }
+		);
+
+		if (!updatedContact) {
+			return res.status(404).json({ message: "Not found" });
+		}
+
+		res.status(200).json({
+			message: "Contactul a fost actualizat cu succes",
+			data: updatedContact,
+		});
 	} catch (error) {
 		console.error(error);
 		res.status(500).json({ message: `Server error: ${error.message}` });

@@ -1,49 +1,23 @@
-// import fs from "fs/promises";
-// import { nanoid } from "nanoid";
-import contacts from "./contacts.json" assert { type: "json" };
-import { v4 as uuidv4 } from "uuid";
+// models/contact.js
+import mongoose from "mongoose";
 
-const contactsService = {
-	listContacts,
-	getById,
-	removeContact,
-	addContact,
-	updateContact,
-};
+const contactSchema = new mongoose.Schema({
+	name: {
+		type: String,
+		required: true,
+		minlength: 3,
+	},
+	email: {
+		type: String,
+		required: true,
+		unique: true,
+	},
+	favorite: {
+		type: Boolean,
+		default: false,
+	},
+});
 
-async function listContacts() {
-	return contacts;
-}
+const Contact = mongoose.model("Contact", contactSchema);
 
-async function getById(contactId) {
-	return contacts.find((el) => el.id === contactId);
-}
-
-async function removeContact(contactId) {
-	const index = contacts.findIndex((contact) => contact.id === contactId);
-	if (index !== -1) {
-		contacts.splice(index, 1);
-		return true;
-	} else {
-		return false;
-	}
-}
-
-async function addContact(contact) {
-	const preparedContact = {
-		id: uuidv4(),
-		...contact,
-	};
-	contacts.push(preparedContact);
-}
-async function updateContact(contactId, body) {
-	const index = contacts.findIndex((contact) => contact.id === contactId);
-	if (index !== -1) {
-		contacts[index] = { ...contacts[index], ...body };
-		return contacts[index];
-	} else {
-		return null;
-	}
-}
-
-export default contactsService;
+export default Contact;

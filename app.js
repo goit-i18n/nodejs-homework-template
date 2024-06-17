@@ -14,7 +14,7 @@ async function connectToDb() {
 		await mongoose.connect(
 			"mongodb+srv://oxanaslivinschi:usLBNFZbEgWPklwB@cluster0.xsdxfkp.mongodb.net/db-contacts"
 		);
-		console.log("Conectat la baza de date cu succes.");
+		console.log("Database connection successful");
 	} catch (error) {
 		console.error(error);
 		process.exit(1);
