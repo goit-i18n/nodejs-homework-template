@@ -1,10 +1,10 @@
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
-dotenv.config(); // Asigură-te că variabilele de mediu sunt încărcate
+dotenv.config(); 
 
 const secretForToken = process.env.TOKEN_SECRET;
-console.log(`AuthController: secretForToken = ${secretForToken}`);
+// console.log(`AuthController: secretForToken = ${secretForToken}`);
 
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
@@ -40,7 +40,7 @@ async function login(data) {
         return token;
 
       } else {
-        throw new Error("Username is not matching");
+        throw new Error("Email or password is wrong");
       }
 }
 
@@ -91,18 +91,18 @@ function getPayloadFromJWT(token) {
 
 export function validateAuth(req, res, next) {
   
-    passport.authenticate('jwt', { session: false }, (err, user) => {
-      if (!user || err) {
+  passport.authenticate('jwt', { session: false }, (err, user) => {
+    if (err || !user) {
         return res.status(401).json({
-          status: 'error',
-          code: 401,
-          message: 'Unauthorized',
-          data: 'Unauthorized',
+            status: 'error',
+            code: 401,
+            message: 'Unauthorized',
+            data: 'Unauthorized',
         });
-      }
-      req.user = user;
-      next();
-    })(req, res, next);
+    }
+    req.user = user;
+    next();
+})(req, res, next);
   
 }
 

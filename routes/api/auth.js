@@ -11,7 +11,12 @@ router.post("/login", async (req, res, next) => {
   try {
     const isValid = checkLoginPayload(req.body);
     if (!isValid) {
-      throw new Error("The login request is invalid.");
+      return res.status(400).json({
+        status: 'error',
+        code: 400,
+        message: 'Incorrect login or password',
+        data: 'Bad request'
+      });
     }
 
     const { email, password} = req.body;
@@ -145,7 +150,7 @@ function checkSignupPayload(data) {
     return false;
   }
 
-  if (data?.password.length >8) {
+  if (data?.password.length >10) {
     return false;
   }
   return true;
