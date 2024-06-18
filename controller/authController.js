@@ -9,6 +9,7 @@ const secretForToken = process.env.TOKEN_SECRET;
 import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import passport from "passport";
+import gravatar from "gravatar";
 
 const AuthController = {
     login,
@@ -49,12 +50,14 @@ async function signup(data) {
   
   const encryptedPassword = await bcrypt.hash(data.password, saltRounds);
 
+  const userAvatar = gravatar.url(data.email);
 
   const newUser = new User({
     email: data.email, 
     password: encryptedPassword, 
     subscription: 'starter', 
-    token: null
+    token: null,
+    avatarURL: userAvatar,
   });
 
   return User.create(newUser);
