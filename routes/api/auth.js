@@ -15,9 +15,9 @@ authRouter.post("/signup", async (req, res) => {
 
 		// Validate email and password
 		if (!email || !password) {
-			return res
-				.status(400)
-				.json({ message: "Email and password are required" });
+			return res.status(400).json({
+				message: "Eroare de la librăria Joi sau o altă librărie de validare",
+			});
 		}
 
 		// Check if the email is already in use
@@ -49,9 +49,10 @@ authRouter.post("/login", async (req, res) => {
 
 		// Validate email and password
 		if (!email || !password) {
-			return res
-				.status(400)
-				.json({ message: "Email and password are required" });
+			return res.status(400).json({
+				message:
+					"Eroare de la librăria Joi sau o altă librărie de validareEroare de la librăria Joi sau o altă librărie de validare",
+			});
 		}
 
 		// Find the user by email

@@ -3,7 +3,6 @@ import logger from "morgan";
 import cors from "cors";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-
 import contactsRouter from "./routes/api/contacts.js";
 import authRouter from "./routes/api/auth.js";
 
@@ -15,7 +14,9 @@ const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 
 async function connectToDb() {
 	try {
-		await mongoose.connect(process.env.MONGO_URL);
+		await mongoose.connect(
+			"mongodb+srv://oxanaslivinschi:usLBNFZbEgWPklwB@cluster0.xsdxfkp.mongodb.net/db-contacts"
+		);
 		console.log("Database connection successful");
 	} catch (error) {
 		console.error(error);

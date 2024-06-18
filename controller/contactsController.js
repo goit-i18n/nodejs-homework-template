@@ -37,6 +37,7 @@ const contactsController = {
 			throw error;
 		}
 	},
+	// Alte metode (listContacts, getContactsById, updateContact, deleteContact)
 	listContacts: async () => {
 		console.log("--- List Contacts ---");
 		try {

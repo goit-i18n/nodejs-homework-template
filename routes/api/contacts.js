@@ -1,3 +1,4 @@
+// routes/contacts.js
 import express from "express";
 import contactsController from "../../controller/contactsController.js";
 
