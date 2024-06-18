@@ -1,5 +1,6 @@
 import express from "express";
 import AuthController from "../../controller/authController.js";
+import FileController from "../../controller/fileController.js";
 import { STATUS_CODES } from "../../utils/constants.js";
 import User from "../../models/user.js";
 import bcrypt from "bcrypt";
@@ -132,6 +133,20 @@ router.get(
     }
   }
 );
+
+router.patch(
+  "/avatar",
+  [AuthController.validateAuth, FileController.uploadFile],
+  async (req, res) => {
+    try {
+      const response = await FileController.processAvatar(req, res);
+      res.status(STATUS_CODES.success).json(response);
+    } catch (error) {
+      respondWithError(res, error, STATUS_CODES.error);
+    }
+  }
+);
+
 
 export default router;
 

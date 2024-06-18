@@ -1,4 +1,4 @@
-// import { func } from 'joi';
+// models/contacts.js;
 import mongoose from 'mongoose';
 const {Schema, model}=mongoose;
 

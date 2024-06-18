@@ -1,4 +1,4 @@
-// import { func } from 'joi';
+// models/user.js;
 import mongoose from 'mongoose';
 const {Schema, model}=mongoose;
 
@@ -22,6 +22,10 @@ const schema = new Schema(  {
         type: String,
         default: null,
       },
+      avatarURL: {
+        type: String,
+        default: null,
+      }
   });
 const User = model('User', schema);
 
