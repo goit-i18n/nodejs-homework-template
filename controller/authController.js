@@ -5,6 +5,8 @@ import passport from "passport";
 import "dotenv/config";
 import { STATUS_CODES } from "../utils/constants.js";
 import gravatar from "gravatar";
+import { nanoid } from "nanoid";
+import sendWithSendGrid from "../utils/sendEmail.js";
 
 const secretForToken = process.env.TOKEN_SECRET;
 
@@ -14,11 +16,19 @@ const authController = {
   validateJWT,
   getPayloadFromJWT,
   validateAuth,
+  getUserByValidationToken,
+  updateValidationToken,
 };
 
 async function login(data) {
   const { email, password } = data;
-  const user = await User.findOne({ email });
+  const user = await User.findOne({ email, verify: true });
+
+  if (!user) {
+    throw new Error(
+      "The username does not exist or the email was not yet validated"
+    );
+  }
   const isMatching = await bcrypt.compare(password, user.password);
 
   if (isMatching) {
@@ -42,14 +52,17 @@ async function singUp(data) {
   try {
     let encryptedPassword = await bcrypt.hash(data.password, saltRounds);
     const userAvatar = gravatar.url(data.email);
+    const token = nanoid();
     const newUser = new User({
       password: encryptedPassword,
       email: data.email,
       subscription: "starter",
       token: null,
       avatarURL: userAvatar,
+      verificationToken: token,
+      verify: false,
     });
-
+    sendWithSendGrid(data.email, token);
     return User.create(newUser);
   } catch (error) {
     throw new Error(`There was an error creating the new user: ${error}`);
@@ -97,6 +110,21 @@ function validateAuth(req, res, next) {
     req.user = user;
     next();
   })(req, res, next);
+}
+
+async function getUserByValidationToken(token) {
+  const user = await User.findOne({ verificationToken: token, verify: false });
+
+  if (user) {
+    return true;
+  }
+  return false;
+}
+
+async function updateValidationToken(email, token) {
+  token = token || nanoid();
+  await User.findOneAndUpdate({ email }, { verificationToken: token });
+  sendWithSendGrid(email, token);
 }
 
 export default authController;

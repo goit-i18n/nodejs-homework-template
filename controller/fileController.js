@@ -14,8 +14,6 @@ const storage = multer.diskStorage({
 const uploadFile = multer({ storage: storage }).single("avatar");
 
 async function processAvatar(req, res) {
-  console.dir(req);
-  console.dir(res);
   const userId = req.user.id; // Obține ID-ul utilizatorului (presupunând că ai middleware de autentificare)
 
   try {

@@ -125,6 +125,49 @@ router.patch(
   }
 );
 
+router.get("/verify/:verificationToken", async (req, res) => {
+  const token = req.params.verificationToken;
+  const hasUser = await authController.getUserByValidationToken(token);
+
+  if (hasUser) {
+    try {
+      await User.findOneAndUpdate(
+        { verificationToken: token },
+        { verify: true }
+      );
+    } catch (error) {
+      throw new Error(
+        "The username could not be found or it was already validated"
+      );
+    }
+    res
+      .status(STATUS_CODES.success)
+      .send({ message: "Verification successful" });
+  } else {
+    res.status(STATUS_CODES.error).send({ message: "User not found" });
+  }
+});
+
+router.post("/verify", async (req, res) => {
+  try {
+    const isValid = req.body?.email;
+    const email = req.body?.email;
+
+    if (isValid) {
+      authController.updateValidationToken(email);
+      res
+        .status(STATUS_CODES.success)
+        .json({ message: "Verification email sent" });
+    } else {
+      res
+        .status(STATUS_CODES.badRequest)
+        .json({ message: "Verification has already been passed" });
+    }
+  } catch (error) {
+    throw new Error(`Something went wrong: ${error}`);
+  }
+});
+
 function checkRequestPayload(data) {
   if (!data?.email || !data?.password) {
     return false;
