@@ -6,6 +6,8 @@ const userSchema = new mongoose.Schema({
 		type: String,
 		required: [true, "Email is required"],
 		unique: true,
+		trim: true,
+		lowercase: true,
 	},
 	password: {
 		type: String,
@@ -22,14 +24,22 @@ const userSchema = new mongoose.Schema({
 	},
 	owner: {
 		type: mongoose.Schema.Types.ObjectId,
-		ref: "user",
+		ref: "User",
+	},
+	avatarURL: {
+		type: String,
 	},
 });
 
 // Hash the password before saving the user
 userSchema.pre("save", async function (next) {
 	if (this.isModified("password") || this.isNew) {
-		this.password = await bcrypt.hash(this.password, 10);
+		try {
+			const hashedPassword = await bcrypt.hash(this.password, 10);
+			this.password = hashedPassword;
+		} catch (error) {
+			return next(error);
+		}
 	}
 	next();
 });
