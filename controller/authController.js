@@ -6,6 +6,8 @@ import dotenv from "dotenv";
 import fs from "fs/promises";
 import path from "path";
 import jimp from "jimp";
+import { v4 as uuidv4 } from "uuid";
+import sendWithSendGrid from "../utils/sendWithSendGrid.js";
 
 dotenv.config();
 const secretForToken = process.env.TOKEN_SECRET;
@@ -18,19 +20,24 @@ const authController = {
 			if (existingUser) {
 				return res.status(409).json({ message: "Email in use" });
 			}
-
-			const hashedPassword = await bcrypt.hash(password, 10);
 			const avatarURL = gravatar.url(email, {
 				s: "250",
 				r: "pg",
 				d: "identicon",
 			});
+
+			const token = uuidv4();
 			const newUser = new User({
-				email,
+				email: email,
 				password,
 				avatarURL,
+				verificationToken: token,
+				verify: false,
 			});
+
 			await newUser.save();
+			await sendWithSendGrid(email, token);
+
 			res.status(201).json({
 				user: {
 					email: newUser.email,
@@ -42,16 +49,35 @@ const authController = {
 			next(error);
 		}
 	},
-
+	updateToken: async (email) => {
+		try {
+			const token = uuidv4();
+			await User.findOneAndUpdate({ email }, { verificationToken: token });
+			await sendWithSendGrid(email, token);
+		} catch (error) {
+			throw new Error("Error updating verification token");
+		}
+	},
+	getUserByValidationToken: async (token) => {
+		try {
+			const user = await User.findOne({
+				verificationToken: token,
+				verify: false,
+			});
+			return user;
+		} catch (error) {
+			throw new Error("Error retrieving user by validation token");
+		}
+	},
 	login: async (req, res, next) => {
 		const { email, password } = req.body;
 		try {
 			const user = await User.findOne({ email });
+
 			if (!user) {
 				return res.status(401).json({ message: "Email or password is wrong" });
 			}
-
-			const isPasswordValid = await bcrypt.compare(password, user.password);
+			const isPasswordValid = await user.comparePassword(password);
 			if (!isPasswordValid) {
 				return res.status(401).json({ message: "Email or password is wrong" });
 			}
@@ -59,8 +85,6 @@ const authController = {
 			const token = jwt.sign({ id: user._id }, secretForToken, {
 				expiresIn: "1h",
 			});
-			user.token = token;
-			await user.save();
 
 			res.status(200).json({
 				token,
@@ -70,7 +94,6 @@ const authController = {
 			next(error);
 		}
 	},
-
 	logout: async (req, res, next) => {
 		try {
 			const user = req.user;

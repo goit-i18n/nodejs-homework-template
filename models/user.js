@@ -29,6 +29,14 @@ const userSchema = new mongoose.Schema({
 	avatarURL: {
 		type: String,
 	},
+	verify: {
+		type: Boolean,
+		default: false,
+	},
+	verificationToken: {
+		type: String,
+		required: [true, "Verify token is required"],
+	},
 });
 
 // Hash the password before saving the user
