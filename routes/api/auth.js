@@ -134,6 +134,57 @@ router.get(
   }
 );
 
+// GET /api/auth/verify/:verificationToken
+router.get("/verify/:verificationToken", async (req, res) => {
+  const token = req.params.verificationToken;
+  const hasUser = await AuthController.getUserByValidationToken(token);
+
+  if (hasUser) {
+    try {
+      await User.findOneAndUpdate(
+        { verificationToken: token },
+        { verify: true }
+      );
+    } catch (error) {
+      throw new Error(
+        "The username could not be found or it was already validated."
+      );
+    }
+
+    res.status(200).send({
+      message: "Verification successful",
+    });
+  } else {
+    respondWithError(res, new Error("User not found"), STATUS_CODES.error);
+  }
+});
+
+// POST /api/auth/verify
+router.post("/verify", async (req, res) => {
+  try {
+    const isValid = req.body?.email;
+    const email = req.body?.email;
+
+    if (isValid) {
+      const user = await User.findOne({ email });
+      if (user && user.verify) {
+        return res.status(400).json({
+          message: "Verification has already been passed"
+        });
+      }
+      AuthController.updateToken(email);
+      res.status(200).json({
+        message: "Verification email sent",
+      });
+    } else {
+      throw new Error("The email field is required");
+    }
+  } catch (error) {
+    respondWithError(res, error, STATUS_CODES.error);
+  }
+});
+
+
 router.patch(
   "/avatar",
   [AuthController.validateAuth, FileController.uploadFile],

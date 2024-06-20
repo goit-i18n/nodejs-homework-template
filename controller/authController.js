@@ -1,3 +1,4 @@
+
 import jwt from 'jsonwebtoken';
 import dotenv from 'dotenv';
 
@@ -10,6 +11,8 @@ import User from "../models/user.js";
 import bcrypt from "bcrypt";
 import passport from "passport";
 import gravatar from "gravatar";
+import { v4 as uuidv4 } from "uuid";
+import sendWithSendGrid from "../utils/sendEmail.js";
 
 const AuthController = {
     login,
@@ -17,16 +20,27 @@ const AuthController = {
     validateJWT,
     validateAuth,
     getPayloadFromJWT,
+    getUserByValidationToken,
+    updateToken,
 };
 
 async function login(data) {
   const {email, password} = data;
 
-    const user = await User.findOne({email});
+  const user = await User.findOne({ email: email, verify: true });
+
+  if (!user) {
+    throw new Error(
+      "The username does not exist or the email was not yet validated."
+    );
+  }
+
 
     
       const isMatching = await bcrypt.compare(password, user.password);
 
+      console.log(`${password} vs ${user.password}`);
+      
       if(isMatching){
         const token = jwt.sign(
           {
@@ -51,6 +65,7 @@ async function signup(data) {
   const encryptedPassword = await bcrypt.hash(data.password, saltRounds);
 
   const userAvatar = gravatar.url(data.email);
+  const token = uuidv4();
 
   const newUser = new User({
     email: data.email, 
@@ -58,9 +73,19 @@ async function signup(data) {
     subscription: 'starter', 
     token: null,
     avatarURL: userAvatar,
+    verificationToken: token,
+    verify: false,
   });
 
+  sendWithSendGrid(data.email, token);
+
   return User.create(newUser);
+}
+
+async function updateToken(email, token) {
+  token = token || uuidv4();
+  await User.findOneAndUpdate({ email }, { verificationToken: token });
+  sendWithSendGrid(email, token);
 }
 
 export function validateJWT(token) {
@@ -107,6 +132,16 @@ export function validateAuth(req, res, next) {
     next();
 })(req, res, next);
   
+}
+
+export async function getUserByValidationToken(token) {
+  const user = await User.findOne({ verificationToken: token, verify: false });
+
+  if (user) {
+    return true;
+  }
+
+  return false;
 }
 
 export default AuthController;
