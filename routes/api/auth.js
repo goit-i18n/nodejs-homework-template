@@ -224,7 +224,7 @@ function checkSignupPayload(data) {
 
 /**
  * Handles Error Cases
- */
+ **/
 function respondWithError(res, error, statusCode) {
   console.error(error);
   res.status(statusCode).json({ message: `${error}` });
