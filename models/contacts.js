@@ -1,19 +1,38 @@
-// const fs = require('fs/promises')
+const mongoose = require("mongoose");
+const { Schema, model } = mongoose;
 
-const listContacts = async () => {}
+const phoneRegex =
+  /^(\+?\d{1,3})?[-.\s]?(\(?\d{2,4}\)?[-.\s]?)?(\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})$/;
 
-const getContactById = async (contactId) => {}
+const schema = new Schema({
+  name: {
+    type: String,
+    minLength: 3,
+    maxLength: 30,
+    required: [true, "Set name for contact"],
+  },
+  email: {
+    type: String,
+    trim: true,
+    unique: true,
+    required: true,
+    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Regex pentru validarea email-ului.Pentru validarea riguroasă a email-urilor, se poate utiliza o bibliotecă specializată.
+  },
+  phone: {
+    type: String,
+    validate: {
+      validator: function (v) {
+        return phoneRegex.test(v); // Validare număr de telefon flexibilă
+      },
+      message: (props) => `${props.value} is not a valid phone number!`,
+    },
+  },
+  favorite: {
+    type: Boolean,
+    default: false,
+  },
+});
 
-const removeContact = async (contactId) => {}
+const Contact = model("Contact", schema);
 
-const addContact = async (body) => {}
-
-const updateContact = async (contactId, body) => {}
-
-module.exports = {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-}
+module.exports = Contact;
