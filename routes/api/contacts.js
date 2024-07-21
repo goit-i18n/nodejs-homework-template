@@ -1,39 +1,6 @@
-<<<<<<< HEAD
-const express = require('express')
-
-const router = express.Router()
-
-router.get('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
-
-router.get('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
-
-router.post('/', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
-
-router.delete('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
-
-router.put('/:contactId', async (req, res, next) => {
-  res.json({ message: 'template message' })
-})
-
-module.exports = router
-=======
 const express = require("express");
 const Joi = require("joi");
-const {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-} = require("../../models/contacts");
+const Contact = require("../../models/contact");
 
 const router = express.Router();
 
@@ -45,10 +12,14 @@ const contactSchema = Joi.object({
     .required(),
 });
 
+const favoriteSchema = Joi.object({
+  favorite: Joi.boolean().required(),
+});
+
 router.get("/", async (req, res) => {
   try {
-    const data = await listContacts();
-    res.status(200).json(data);
+    const contacts = await Contact.find();
+    res.status(200).json(contacts);
   } catch (err) {
     res.status(500).json({ error: "Internal Server Error" });
   }
@@ -56,14 +27,14 @@ router.get("/", async (req, res) => {
 
 router.get("/:contactId", async (req, res) => {
   try {
-    const contact = await getContactById(req.params.contactId);
+    const contact = await Contact.findById(req.params.contactId);
     if (contact) {
       res.status(200).json(contact);
     } else {
-      res.status(400).json({ message: "Not found" });
+      res.status(404).json({ message: "Not found" });
     }
   } catch (error) {
-    res.status(500).json({ error: "Internal several error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
@@ -74,55 +45,67 @@ router.post("/", async (req, res) => {
     return res.status(400).json({ message: error.details[0].message });
   }
 
-  const { name, email, phone } = req.body;
-
   try {
-    const newContact = await addContact(req.body);
+    const newContact = new Contact(req.body);
+    await newContact.save();
     res.status(201).json(newContact);
   } catch (error) {
-    res.status(500).json({ error: "Internal server error" });
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-router.delete("/:id", async (req, res) => {
+router.delete("/:contactId", async (req, res) => {
   try {
-    const removedContact = await removeContact(req.params.id);
+    const removedContact = await Contact.findByIdAndDelete(req.params.contactId);
     if (removedContact) {
-      res.status(200).json({ message: "contact deleted" });
+      res.status(200).json({ message: "Contact deleted" });
     } else {
       res.status(404).json({ message: "Not found" });
     }
   } catch (error) {
-    console.error("Error in DELETE /api/contacts/:id:", error);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error in DELETE /api/contacts/:contactId:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
-router.put('/:contactId', async (req, res) => {
+router.put("/:contactId", async (req, res) => {
   const { error } = contactSchema.validate(req.body);
 
   if (error) {
     return res.status(400).json({ message: error.details[0].message });
   }
 
-  const updateField = req.body;
-
-  if (Object.keys(updateField).length === 0) {
-    return res.status(400).json({ message: 'missing fields' });
-  }  
-
   try {
-    const updatedContact = await updateContact(req.params.contactId, updateField);
+    const updatedContact = await Contact.findByIdAndUpdate(req.params.contactId, req.body, { new: true });
     if (updatedContact) {
       res.status(200).json(updatedContact);
     } else {
-      res.status(404).json({ message: 'Not found' });
+      res.status(404).json({ message: "Not found" });
     }
   } catch (error) {
-    console.error('Error in PUT /api/contacts/:contactId:', error);
-    res.status(500).json({ error: 'Internal server error' });
+    console.error("Error in PUT /api/contacts/:contactId:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+router.patch("/:contactId/favorite", async (req, res) => {
+  const { error } = favoriteSchema.validate(req.body);
+
+  if (error) {
+    return res.status(400).json({ message: "missing field favorite" });
+  }
+
+  try {
+    const updatedContact = await Contact.findByIdAndUpdate(req.params.contactId, { favorite: req.body.favorite }, { new: true });
+    if (updatedContact) {
+      res.status(200).json(updatedContact);
+    } else {
+      res.status(404).json({ message: "Not found" });
+    }
+  } catch (error) {
+    console.error("Error in PATCH /api/contacts/:contactId/favorite:", error);
+    res.status(500).json({ error: "Internal Server Error" });
   }
 });
 
 module.exports = router;
->>>>>>> hw02-express
