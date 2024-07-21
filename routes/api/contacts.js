@@ -16,7 +16,7 @@ const { updateStatusContact } = require('./services/contactService');
 router.get('/', async (req, res, next) => {
   try{
     // const contacts = await listContacts();
-    const contacts = await Contact.find({});
+    const contacts = await Contact.find();
     console.log('Contacts fetched:', contacts);
     res.status(200).json(contacts);
 
