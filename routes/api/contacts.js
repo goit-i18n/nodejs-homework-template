@@ -1,5 +1,7 @@
+// routes/api/contacts.js
 const express = require("express");
 const Joi = require("joi");
+const auth = require("../../middleware/auth");
 const {
   listContacts,
   getContactById,
@@ -16,18 +18,18 @@ const contactSchema = Joi.object({
   phone: Joi.string().required(),
 });
 
-router.get("/", async (req, res, next) => {
+router.get("/", auth, async (req, res, next) => {
   try {
-    const contacts = await listContacts();
+    const contacts = await listContacts(req.user._id); // Adjust the model function to filter by user ID
     res.json(contacts);
   } catch (error) {
     next(error);
   }
 });
 
-router.get("/:contactId", async (req, res, next) => {
+router.get("/:contactId", auth, async (req, res, next) => {
   try {
-    const contact = await getContactById(req.params.contactId);
+    const contact = await getContactById(req.params.contactId, req.user._id); // Adjust the model function to filter by user ID
     if (!contact) {
       return res.status(404).json({ message: "Not found" });
     }
@@ -37,7 +39,7 @@ router.get("/:contactId", async (req, res, next) => {
   }
 });
 
-router.post("/", async (req, res, next) => {
+router.post("/", auth, async (req, res, next) => {
   try {
     const { error } = contactSchema.validate(req.body);
     if (error) {
@@ -45,16 +47,19 @@ router.post("/", async (req, res, next) => {
         message: `missing required ${error.details[0].context.key} field`,
       });
     }
-    const newContact = await addContact(req.body);
+    const newContact = await addContact({ ...req.body, owner: req.user._id }); // Add owner field
     res.status(201).json(newContact);
   } catch (error) {
     next(error);
   }
 });
 
-router.delete("/:contactId", async (req, res, next) => {
+router.delete("/:contactId", auth, async (req, res, next) => {
   try {
-    const removedContact = await removeContact(req.params.contactId);
+    const removedContact = await removeContact(
+      req.params.contactId,
+      req.user._id
+    ); // Adjust the model function to filter by user ID
     if (!removedContact) {
       return res.status(404).json({ message: "Not found" });
     }
@@ -64,13 +69,17 @@ router.delete("/:contactId", async (req, res, next) => {
   }
 });
 
-router.put("/:contactId", async (req, res, next) => {
+router.put("/:contactId", auth, async (req, res, next) => {
   try {
     const { error } = contactSchema.validate(req.body);
     if (error) {
       return res.status(400).json({ message: "missing fields" });
     }
-    const updatedContact = await updateContact(req.params.contactId, req.body);
+    const updatedContact = await updateContact(
+      req.params.contactId,
+      req.body,
+      req.user._id
+    ); // Adjust the model function to filter by user ID
     if (!updatedContact) {
       return res.status(404).json({ message: "Not found" });
     }
