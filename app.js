@@ -1,4 +1,3 @@
-// app.js
 const express = require("express");
 const logger = require("morgan");
 const cors = require("cors");
@@ -7,10 +6,8 @@ const mongoose = require("mongoose");
 const contactsRouter = require("./routes/api/contacts");
 const usersRouter = require("./routes/api/users");
 
-mongoose.connect("mongodb://localhost:27017/contactsDB", {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
-});
+const DB_HOST = "mongodb://localhost:27017/contactsDB"; // Hardcoded MongoDB URI
+const PORT = 3000; // Hardcoded Port
 
 const app = express();
 
@@ -30,5 +27,18 @@ app.use((req, res) => {
 app.use((err, req, res, next) => {
   res.status(500).json({ message: err.message });
 });
+
+mongoose
+  .connect(DB_HOST)
+  .then(() => {
+    console.log("Database connection successful");
+    app.listen(PORT, () => {
+      console.log(`Server is running. Use our API on port: ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.log(`Database connection error: ${error.message}`);
+    process.exit(1);
+  });
 
 module.exports = app;
