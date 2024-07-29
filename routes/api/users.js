@@ -3,29 +3,25 @@ const express = require("express");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { User } = require("../../models/user");
-const auth = require("../../middleware/auth"); // Ensure this line is present
+const auth = require("../../middleware/auth");
 
 const router = express.Router();
 
-// Signup route
 router.post("/signup", async (req, res, next) => {
   try {
     const { email, password } = req.body;
 
-    // Validate input
     if (!email || !password) {
       return res
         .status(400)
         .json({ message: "Email and password are required" });
     }
 
-    // Check for existing user
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: "Email in use" });
     }
 
-    // Hash password and create user
     const hashedPassword = await bcrypt.hash(password, 8);
     const user = new User({ email, password: hashedPassword });
     await user.save();
@@ -50,19 +46,16 @@ router.post("/login", async (req, res, next) => {
         .json({ message: "Email and password are required" });
     }
 
-    // Find user by email
     const user = await User.findOne({ email });
     if (!user) {
       return res.status(401).json({ message: "Email or password is wrong" });
     }
 
-    // Compare password
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
       return res.status(401).json({ message: "Email or password is wrong" });
     }
 
-    // Create token and save it to user
     const token = jwt.sign({ id: user._id }, "your_jwt_secret", {
       expiresIn: "1h",
     });
@@ -78,7 +71,6 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
-// Logout route
 router.get("/logout", auth, async (req, res, next) => {
   try {
     const user = req.user;
@@ -90,7 +82,6 @@ router.get("/logout", auth, async (req, res, next) => {
   }
 });
 
-// Current user route
 router.get("/current", auth, async (req, res, next) => {
   try {
     const user = req.user;
