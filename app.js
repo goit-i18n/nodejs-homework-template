@@ -6,8 +6,8 @@ const mongoose = require("mongoose");
 const contactsRouter = require("./routes/api/contacts");
 const usersRouter = require("./routes/api/users");
 
-const DB_HOST = "mongodb://localhost:27017/contactsDB"; // Hardcoded MongoDB URI
-const PORT = 3000; // Hardcoded Port
+const DB_HOST = "mongodb://localhost:27017/contactsDB";
+const PORT = 3000;
 
 const app = express();
 
