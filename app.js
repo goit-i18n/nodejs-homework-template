@@ -1,25 +1,44 @@
-const express = require('express')
-const logger = require('morgan')
-const cors = require('cors')
+const express = require("express");
+const logger = require("morgan");
+const cors = require("cors");
+const mongoose = require("mongoose");
 
-const contactsRouter = require('./routes/api/contacts')
+const contactsRouter = require("./routes/api/contacts");
+const usersRouter = require("./routes/api/users");
 
-const app = express()
+const DB_HOST = "mongodb://localhost:27017/contactsDB";
+const PORT = 3000;
 
-const formatsLogger = app.get('env') === 'development' ? 'dev' : 'short'
+const app = express();
 
-app.use(logger(formatsLogger))
-app.use(cors())
-app.use(express.json())
+const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 
-app.use('/api/contacts', contactsRouter)
+app.use(logger(formatsLogger));
+app.use(cors());
+app.use(express.json());
+
+app.use("/api/contacts", contactsRouter);
+app.use("/api/users", usersRouter);
 
 app.use((req, res) => {
-  res.status(404).json({ message: 'Not found' })
-})
+  res.status(404).json({ message: "Not found" });
+});
 
 app.use((err, req, res, next) => {
-  res.status(500).json({ message: err.message })
-})
+  res.status(500).json({ message: err.message });
+});
 
-module.exports = app
+mongoose
+  .connect(DB_HOST)
+  .then(() => {
+    console.log("Database connection successful");
+    app.listen(PORT, () => {
+      console.log(`Server is running. Use our API on port: ${PORT}`);
+    });
+  })
+  .catch((error) => {
+    console.log(`Database connection error: ${error.message}`);
+    process.exit(1);
+  });
+
+module.exports = app;
