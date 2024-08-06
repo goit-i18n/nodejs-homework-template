@@ -1,10 +1,18 @@
 const request = require('supertest');
-const app = require('../src/app');
-const User = require('../src/models/userModel');
+const app = require('../app');
+const User = require('../models/userModel');
 const mongoose = require('mongoose');
+const jwt = require('jsonwebtoken');
+
+jest.setTimeout(30000);
 
 describe('Authentication Controller', () => {
     beforeAll(async () => {
+        await mongoose.connect('mongodb+srv://cursarudamian:1234@cluster0.mo152rw.mongodb.net/contacts?retryWrites=true&w=majority', {
+            useNewUrlParser: true,
+            useUnifiedTopology: true,
+        });
+
         await User.deleteMany({});
     });
 
