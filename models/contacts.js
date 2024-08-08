@@ -1,57 +1,139 @@
-const fs = require('fs').promises;
-const path = require('path');
+const Contact = require("./contactsModel");
 
-const contactsPath = path.join(__dirname, 'contacts.json');
+const listContacts = async (res) => {
+  try {
+    const contacts = await Contact.find({});
 
-const listContacts = async () => {
-  const data = await fs.readFile(contactsPath, 'utf-8');
-  return JSON.parse(data);
-};
-
-const getContactById = async (id) => {
-  const contacts = await listContacts();
-  return contacts.find(contact => contact.id === id);
-};
-
-const addContact = async ({ name, email, phone }) => {
-  const contacts = await listContacts();
-  const newContact = {
-    id: String(Date.now()),
-    name,
-    email,
-    phone,
-  };
-  contacts.push(newContact);
-  await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-  return newContact;
-};
-
-const removeContact = async (id) => {
-  const contacts = await listContacts();
-  const index = contacts.findIndex(contact => contact.id === id);
-  if (index !== -1) {
-    contacts.splice(index, 1);
-    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-    return true;
+    res.status(200).json({
+      status: "success",
+      data: {
+        contacts,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
   }
-  return false;
 };
 
-const updateContact = async (id, updates) => {
-  const contacts = await listContacts();
-  const index = contacts.findIndex(contact => contact.id === id);
-  if (index !== -1) {
-    contacts[index] = { ...contacts[index], ...updates };
-    await fs.writeFile(contactsPath, JSON.stringify(contacts, null, 2));
-    return contacts[index];
+const getContactById = async (res, contactId) => {
+  try {
+    const contact = await Contact.findById(contactId);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        contact,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
   }
-  return null;
+};
+
+const removeContact = async (res, contactId) => {
+  try {
+    await Contact.findByIdAndDelete(contactId);
+
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
+
+const addContact = async (res, body) => {
+  try {
+    const newContact = await Contact.create(body);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        contact: newContact,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
+
+const updateContact = async (res, body, contactId) => {
+  try {
+    const contact = await Contact.findByIdAndUpdate(contactId, body, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        contact,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
+
+const updateStatusContact = async (res, body, contactId) => {
+  try {
+    const { favorite } = body;
+    if (typeof favorite !== "boolean") {
+      return res.status(400).json({
+        status: "fail",
+        message: "Favorite must be a boolean value (true or false).",
+      });
+    }
+
+    const update = { $set: { favorite } };
+
+    const contact = await Contact.findByIdAndUpdate(contactId, update, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!contact) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Contact not found",
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        contact,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
 };
 
 module.exports = {
   listContacts,
   getContactById,
-  addContact,
   removeContact,
+  addContact,
   updateContact,
+  updateStatusContact,
 };
