@@ -1,14 +1,133 @@
-// const fs = require('fs/promises')
+const Contact = require("./contactsModel");
 
-const listContacts = async () => {}
+const listContacts = async (res) => {
+  try {
+    const contacts = await Contact.find({});
 
-const getContactById = async (contactId) => {}
+    res.status(200).json({
+      status: "success",
+      data: {
+        contacts,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
 
-const removeContact = async (contactId) => {}
+const getContactById = async (res, contactId) => {
+  try {
+    const contact = await Contact.findById(contactId);
 
-const addContact = async (body) => {}
+    res.status(200).json({
+      status: "success",
+      data: {
+        contact,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
 
-const updateContact = async (contactId, body) => {}
+const removeContact = async (res, contactId) => {
+  try {
+    await Contact.findByIdAndDelete(contactId);
+
+    res.status(204).json({
+      status: "success",
+      data: null,
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
+
+const addContact = async (res, body) => {
+  try {
+    const newContact = await Contact.create(body);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        contact: newContact,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
+
+const updateContact = async (res, body, contactId) => {
+  try {
+    const contact = await Contact.findByIdAndUpdate(contactId, body, {
+      new: true,
+      runValidators: true,
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        contact,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
+
+const updateStatusContact = async (res, body, contactId) => {
+  try {
+    const { favorite } = body;
+    if (typeof favorite !== "boolean") {
+      return res.status(400).json({
+        status: "fail",
+        message: "Favorite must be a boolean value (true or false).",
+      });
+    }
+
+    const update = { $set: { favorite } };
+
+    const contact = await Contact.findByIdAndUpdate(contactId, update, {
+      new: true,
+      runValidators: true,
+    });
+
+    if (!contact) {
+      return res.status(404).json({
+        status: "fail",
+        message: "Contact not found",
+      });
+    }
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        contact,
+      },
+    });
+  } catch (err) {
+    res.status(404).json({
+      status: "fail",
+      message: err,
+    });
+  }
+};
 
 module.exports = {
   listContacts,
@@ -16,4 +135,5 @@ module.exports = {
   removeContact,
   addContact,
   updateContact,
-}
+  updateStatusContact,
+};
