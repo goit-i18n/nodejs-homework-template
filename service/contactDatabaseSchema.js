@@ -5,16 +5,20 @@ const contactSchema = new mongoose.Schema({
         type: String,
         required: [true, 'Set name for contact'],
       },
-      email: {
+    email: {
         type: String,
-      },
-      phone: {
+    },
+    phone: {
         type: String,
-      },
-      favorite: {
+    },
+    favorite: {
         type: Boolean,
         default: false,
-      },
+    },
+    owner: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: 'user',
+    }
 })
 
 const Contact = mongoose.model("Contact", contactSchema);
