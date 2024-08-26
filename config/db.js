@@ -2,7 +2,11 @@
 const mongoose = require('mongoose');
 require('dotenv').config();
 
-const uri = process.env.URI_DB;
+
+mongoose.Promise=global.Promise
+
+
+const uri = "mongodb+srv://czke33:programozas@contacts.mo3ir.mongodb.net/?retryWrites=true&w=majority&appName=contacts";
 
 const db = mongoose.connect(uri, {
     dbName: 'db-contacts',

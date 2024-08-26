@@ -5,7 +5,7 @@ const schemaContact = Joi.object({
   name: Joi.string().min(1).max(20).required(),
   phone: Joi.number().integer().required(),
   email: Joi.string()
-    .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'ru'] } })
+    .email({ minDomainSegments: 2, tlds: { allow: ['com', 'net', 'ro'] } })
     .required(),
   favorite: Joi.boolean().optional(),
 });
