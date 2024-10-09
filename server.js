@@ -3,6 +3,8 @@ import app from "./app.js";
 import dotenv from "dotenv";
 dotenv.config();
 
+console.log("MongoDB URI:", process.env.DB_HOST);
+
 mongoose.Promise = global.Promise;
 
 const connectDB = async () => {
