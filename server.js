@@ -1,23 +1,28 @@
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const express = require('express');
+const mongoose = require('mongoose');
+const cors = require('cors');
+const contactsRouter = require('./routes/api/contacts'); 
 
-const uri = "mongodb+srv://adyyy1234:tt0cKZob1h27FQQS@cluster0.jbj4r.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0";
+const app = express();
+const PORT = process.env.PORT || 3000;
 
-const client = new MongoClient(uri, {
-  serverApi: {
-    version: ServerApiVersion.v1,
-    strict: true,
-    deprecationErrors: true,
-  }
+app.use(cors());
+app.use(express.json());
+
+
+mongoose.connect('mongodb+srv://adyyy1234:tt0cKZob1h27FQQS@cluster0.jbj4r.mongodb.net/contactsDB', {
+    useNewUrlParser: true,
+    useUnifiedTopology: true,
+}).then(() => {
+    console.log('Connected to MongoDB');
+}).catch(err => {
+    console.error('MongoDB connection error:', err);
 });
 
-async function run() {
-  try {
-    await client.connect();
-    await client.db("admin").command({ ping: 1 });
-    console.log("Pinged your deployment. You successfully connected to MongoDB!");
-  } finally {
-    await client.close();
-  }
-}
 
-run().catch(console.dir);
+app.use('/api/contacts', contactsRouter);
+
+
+app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+});
