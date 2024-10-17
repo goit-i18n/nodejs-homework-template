@@ -1,5 +1,6 @@
 import express from "express";
-import User from "../models/user.model.js";
+import User from "../../models/user.model.js";
+import auth from "../../middlewares/auth.middleware.js";
 import Joi from "joi";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
