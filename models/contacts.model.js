@@ -16,6 +16,11 @@ const contactSchema = new Schema({
     type: Boolean,
     default: false,
   },
+  owner: {
+    type: Schema.Types.ObjectId, // Stoceaza ID-ul utilizatorului care a creat contactul
+    ref: "User", // Referință la modelul 'User'
+    required: true,
+  },
 });
 
 const Contact = mongoose.model("Contact", contactSchema);

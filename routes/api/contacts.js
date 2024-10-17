@@ -1,6 +1,7 @@
 import express from "express";
 import Joi from "joi";
 import Contact from "../../models/contacts.model.js";
+import auth from "../../middlewares/auth.middleware.js";
 
 const contactSchema = Joi.object({
   name: Joi.string().required().messages({
@@ -15,15 +16,26 @@ const contactSchema = Joi.object({
 
 const router = express.Router();
 
-router.get("/", async (req, res, next) => {
+// Modificarea rutei GET / pentru a include middleware-ul de autentificare
+router.get("/", auth, async (req, res, next) => {
   try {
-    const contacts = await Contact.find();
-    console.log(contacts);
-    res.status(200).json(contacts);
+    // Extragem parametrii de paginare și filtrare din query
+    const { page = 1, limit = 20, favorite } = req.query;
+    const skip = (page - 1) * limit; // Calculăm offset-ul pentru paginare
+
+    const query = { owner: req.user._id }; // Căutăm doar contactele utilizatorului curent
+    if (favorite !== undefined) {
+      query.favorite = favorite === "true"; // Filtrăm contactele după câmpul favorite
+    }
+
+    const contacts = await Contact.find(query).skip(skip).limit(Number(limit)); // Obținem contactele
+    res.status(200).json(contacts); // Returnăm contactele
   } catch (error) {
-    next(error);
+    next(error); // Transmiterea erorii mai departe
   }
 });
+
+// Rutele pentru obținerea unui contact după ID, crearea, ștergerea, actualizarea și modificarea favorite rămân la fel
 
 router.get("/:contactId", async (req, res, next) => {
   try {
@@ -46,7 +58,8 @@ router.post("/", async (req, res, next) => {
       return res.status(400).json({ message: error.details[0].message });
     }
 
-    const contact = new Contact(req.body);
+    // Creăm contactul cu owner setat la ID-ul utilizatorului curent
+    const contact = new Contact({ ...req.body, owner: req.user._id }); // Adăugăm proprietatea owner
     await contact.save();
     res.status(201).json(contact);
   } catch (error) {
@@ -91,8 +104,6 @@ router.put("/:contactId", async (req, res, next) => {
   }
 });
 
-export default router;
-
 router.patch("/:contactId/favorite", async (req, res, next) => {
   const { contactId } = req.params;
   const { favorite } = req.body;
@@ -117,3 +128,5 @@ router.patch("/:contactId/favorite", async (req, res, next) => {
     next(error);
   }
 });
+
+export default router;
