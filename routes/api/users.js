@@ -4,16 +4,34 @@ import auth from "../../middlewares/auth.middleware.js";
 import Joi from "joi";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
+import gravatar from "gravatar";
+import multer from "multer"; // Importă Multer pentru gestionarea fișierelor
+import Jimp from "jimp"; // Importă Jimp pentru redimensionarea imaginilor
+import fs from "fs/promises"; // Pentru a manipula fișierele
+import path from "path";
 
 const router = express.Router();
 
-// Schema de validare pentru Joi
+// Configurare Multer pentru a salva fișiere temporar în folderul tmp
+const tmpDir = path.join(process.cwd(), "tmp");
+const avatarsDir = path.join(process.cwd(), "public", "avatars");
+
+const storage = multer.diskStorage({
+  destination: tmpDir,
+  filename: (req, file, cb) => {
+    cb(null, `${req.user._id}_${file.originalname}`);
+  },
+});
+
+const upload = multer({ storage });
+
+// Schema de validare pentru Joi (înregistrare)
 const signupSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
 });
 
-// Endpoint pentru inregistrare
+// Endpoint pentru înregistrare
 router.post("/signup", async (req, res, next) => {
   try {
     const { email, password } = req.body;
@@ -24,20 +42,22 @@ router.post("/signup", async (req, res, next) => {
       return res.status(400).json({ message: error.message });
     }
 
-    // Verificarebemail dc există deja în baza de date
+    // Verificare email dacă există deja în baza de date
     const existingUser = await User.findOne({ email });
     if (existingUser) {
       return res.status(409).json({ message: "Email in use" });
     }
 
-    // Creare nou utilizator
-    const user = new User({ email, password });
+    // Creare nou utilizator și generare avatar folosind gravatar
+    const avatarURL = gravatar.url(email, { s: "250", d: "retro" }, true);
+    const user = new User({ email, password, avatarURL });
     await user.save();
 
     return res.status(201).json({
       user: {
         email: user.email,
         subscription: user.subscription,
+        avatarURL: user.avatarURL,
       },
     });
   } catch (error) {
@@ -45,9 +65,39 @@ router.post("/signup", async (req, res, next) => {
   }
 });
 
-export default router;
+// Endpoint pentru actualizarea avatarului
+router.patch(
+  "/avatars",
+  auth,
+  upload.single("avatar"),
+  async (req, res, next) => {
+    try {
+      const { path: tmpFilePath, filename } = req.file; // Extrage calea temporară și numele fișierului încărcat
+      const newAvatarPath = path.join(avatarsDir, filename);
 
-// logica pentru autentificare:
+      // Procesare imagine cu Jimp (redimensionare la 250x250 pixeli)
+      const image = await Jimp.read(tmpFilePath);
+      await image.resize(250, 250).writeAsync(newAvatarPath); // Redimensionează și salvează imaginea
+
+      // Șterge fișierul temporar după ce a fost procesat
+      await fs.unlink(tmpFilePath);
+
+      // Actualizează avatarURL în baza de date
+      const avatarURL = `/avatars/${filename}`;
+      const user = await User.findByIdAndUpdate(
+        req.user._id,
+        { avatarURL },
+        { new: true }
+      );
+
+      res.status(200).json({ avatarURL: user.avatarURL });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Logica pentru autentificare (login)
 const loginSchema = Joi.object({
   email: Joi.string().email().required(),
   password: Joi.string().min(6).required(),
@@ -90,7 +140,7 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
-//  logică pentru deconectare:
+// Logica pentru deconectare
 router.get("/logout", auth, async (req, res, next) => {
   try {
     const user = req.user;
@@ -101,3 +151,5 @@ router.get("/logout", auth, async (req, res, next) => {
     next(error);
   }
 });
+
+export default router;
