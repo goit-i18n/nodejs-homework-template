@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import bcrypt from "bcryptjs";
+import gravatar from "gravatar";
 
 const { Schema } = mongoose;
 
@@ -22,12 +23,23 @@ const userSchema = new Schema({
     type: String,
     default: null,
   },
+  avatarURL: {
+    type: String, // Adaugă câmpul avatarURL pentru a stoca URL-ul avatarului
+  },
 });
 
 // Criptare parola înainte de a salva
 userSchema.pre("save", async function (next) {
   if (this.isModified("password")) {
     this.password = await bcrypt.hash(this.password, 10);
+  }
+  next();
+});
+
+// Setarea avatarului cu gravatar înainte de a salva
+userSchema.pre("save", function (next) {
+  if (!this.avatarURL) {
+    this.avatarURL = gravatar.url(this.email, { s: "250", d: "retro" }, true);
   }
   next();
 });
