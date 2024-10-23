@@ -1,6 +1,7 @@
 import express from "express";
 import User from "../../models/user.model.js";
 import auth from "../../middlewares/auth.middleware.js";
+import { upload } from "../../middlewares/upload.middleware.js";
 import Joi from "joi";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
@@ -72,36 +73,29 @@ router.patch(
   upload.single("avatar"),
   async (req, res, next) => {
     try {
-      const { path: tmpFilePath, filename } = req.file; // Extrage calea temporară și numele fișierului încărcat
-      const newAvatarPath = path.join(avatarsDir, filename);
+      const { path: tempPath, originalname } = req.file;
+      const extension = path.extname(originalname);
+      const avatarName = `${req.user._id}${extension}`;
+      const avatarPath = path.join(process.cwd(), "public/avatars", avatarName);
 
-      // Procesare imagine cu Jimp (redimensionare la 250x250 pixeli)
-      const image = await Jimp.read(tmpFilePath);
-      await image.resize(250, 250).writeAsync(newAvatarPath); // Redimensionează și salvează imaginea
+      // Redimensionare avatar cu Jimp
+      const image = await jimp.read(tempPath);
+      await image.resize(250, 250).writeAsync(avatarPath);
 
-      // Șterge fișierul temporar după ce a fost procesat
-      await fs.unlink(tmpFilePath);
+      // Șterge fișierul temporar
+      await fs.unlink(tempPath);
 
       // Actualizează avatarURL în baza de date
-      const avatarURL = `/avatars/${filename}`;
-      const user = await User.findByIdAndUpdate(
-        req.user._id,
-        { avatarURL },
-        { new: true }
-      );
+      const avatarURL = `/avatars/${avatarName}`;
+      req.user.avatarURL = avatarURL;
+      await req.user.save();
 
-      res.status(200).json({ avatarURL: user.avatarURL });
+      res.status(200).json({ avatarURL });
     } catch (error) {
       next(error);
     }
   }
 );
-
-// Logica pentru autentificare (login)
-const loginSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-});
 
 router.post("/login", async (req, res, next) => {
   try {
