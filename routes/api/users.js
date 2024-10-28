@@ -1,4 +1,5 @@
 const express = require('express');
+<<<<<<< Updated upstream
 const multer = require('multer');
 const jimp = require('jimp');
 const path = require('path');
@@ -39,5 +40,15 @@ router.patch('/avatars', authenticate, upload.single('file'), async (req, res) =
         res.status(500).json({ message: 'Error processing image', error });
     }
 });
+=======
+const { registerUser, updateUserAvatar } = require('../../controllers/userController');
+const authMiddleware = require('../../middlewares/auth');
+const upload = require('../../middlewares/uploadMiddleware');
+
+const router = express.Router();
+
+router.post('/register', registerUser); 
+router.patch('/avatars', authMiddleware, upload.single('avatar'), updateUserAvatar);
+>>>>>>> Stashed changes
 
 module.exports = router;
