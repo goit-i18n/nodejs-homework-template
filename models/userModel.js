@@ -15,7 +15,7 @@ const userSchema = new mongoose.Schema({
     }
 });
 
-// Verifică dacă modelul este deja definit
+
 const User = mongoose.models.User || mongoose.model('User', userSchema);
 
 module.exports = User;

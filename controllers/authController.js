@@ -3,21 +3,21 @@ const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
 
 const register = async (req, res) => {
-    console.log(req.body); // Logare pentru a verifica datele primite
+    console.log(req.body);
     const { email, password } = req.body;
 
     try {
-        // Verifică dacă utilizatorul există deja
+       
         const existingUser = await User.findOne({ email });
         if (existingUser) {
             return res.status(400).json({ message: 'User already exists' });
         }
 
-        // Hash the password
+        
         const hashedPassword = await bcrypt.hash(password, 10);
         const newUser = new User({ email, password: hashedPassword });
 
-        // Salvează utilizatorul în baza de date
+        
         await newUser.save();
 
         res.status(201).json({ message: 'User registered successfully' });

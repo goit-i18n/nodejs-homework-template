@@ -1,4 +1,4 @@
-require('dotenv').config(); // Adaugă această linie la începutul fișierului server.js
+require('dotenv').config(); 
 
 const express = require('express');
 const mongoose = require('mongoose');

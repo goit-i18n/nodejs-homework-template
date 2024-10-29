@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const User = require('../models/userModel');
 
 const auth = async (req, res, next) => {
-    console.log('Auth middleware called'); // Adaugă acest log pentru debugging
+    console.log('Auth middleware called'); 
     const token = req.header('Authorization')?.replace('Bearer ', '');
 
     if (!token) {
@@ -19,4 +19,4 @@ const auth = async (req, res, next) => {
     }
 };
 
-module.exports = auth; // Exportă middleware-ul
+module.exports = auth; 

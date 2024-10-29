@@ -1,4 +1,4 @@
-const User = require('../models/usermodel'); // Verifică să ai modelul corect importat
+const User = require('../models/usermodel'); 
 
 const updateAvatar = async (req, res) => {
     if (!req.file) {
