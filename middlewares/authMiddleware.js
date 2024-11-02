@@ -5,8 +5,8 @@ const auth = async (req, res, next) => {
     console.log('Auth middleware called'); // Log pentru debugging
     
     // Obține tokenul din header
-    const authHeader = req.header('Authorization');
-    const token = authHeader ? authHeader.replace('Bearer ', '') : null;
+    const authHeader = req.headers.authorization;
+    const token = authHeader ? authHeader.split(' ')[1] : null;
 
     if (!token) {
         return res.status(401).json({ message: 'No token, authorization denied' });
