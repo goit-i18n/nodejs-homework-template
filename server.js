@@ -3,6 +3,8 @@ import app from "./app.js";
 import dotenv from "dotenv";
 dotenv.config();
 
+const PORT = process.env.PORT || 3000; // <=== Set PORT here
+
 mongoose.Promise = global.Promise;
 
 const connectDB = async () => {
@@ -17,6 +19,6 @@ const connectDB = async () => {
 
 connectDB();
 
-app.listen(3000, () => {
-  console.log("Server is running. Use our API on port: 3000");
+app.listen(PORT, () => {
+  console.log(`Server is running. Use our API on port: ${PORT}`);
 });
