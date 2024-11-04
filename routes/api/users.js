@@ -1,13 +1,32 @@
 import express from "express";
 import User from "../../models/user.model.js";
 import auth from "../../middlewares/auth.middleware.js";
+import { upload } from "../../middlewares/upload.middleware.js";
 import Joi from "joi";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcryptjs";
-import { sendVerificationEmail } from "../../emailService.js"; // Import the email service
-import { v4 as uuidv4 } from "uuid"; // Import UUID for token generation
+import gravatar from "gravatar";
+import multer from "multer";
+import Jimp from "jimp";
+import fs from "fs/promises";
+import path from "path";
+import { sendVerificationEmail } from "../../emailService.js"; // Email service for verification
+import { v4 as uuidv4 } from "uuid"; // UUID for generating unique verification tokens
 
 const router = express.Router();
+
+// Define directories for temporary files and avatars
+const tmpDir = path.join(process.cwd(), "tmp");
+const avatarsDir = path.join(process.cwd(), "public", "avatars");
+
+const storage = multer.diskStorage({
+  destination: tmpDir,
+  filename: (req, file, cb) => {
+    cb(null, `${req.user._id}_${file.originalname}`);
+  },
+});
+
+const uploadMiddleware = multer({ storage });
 
 // Validation schemas using Joi
 const signupSchema = Joi.object({
@@ -37,14 +56,21 @@ router.post("/signup", async (req, res, next) => {
       return res.status(409).json({ message: "Email in use" });
     }
 
-    // Create a new user with a verification token
-    const verificationToken = uuidv4(); // Generate a unique token
+    // Generate a unique avatar using Gravatar
+    const avatarURL = gravatar.url(email, { s: "250", d: "retro" }, true);
+
+    // Generate a verification token
+    const verificationToken = uuidv4();
+
+    // Create a new user with the verification token and default avatar
     const user = new User({
       email,
       password,
-      verificationToken, // Save the verification token in the user model
-      verify: false, // Set verify field to false initially
+      avatarURL,
+      verificationToken,
+      verify: false, // Initially not verified
     });
+
     await user.save();
 
     // Send the verification email
@@ -55,6 +81,7 @@ router.post("/signup", async (req, res, next) => {
       user: {
         email: user.email,
         subscription: user.subscription,
+        avatarURL: user.avatarURL,
       },
     });
   } catch (error) {
@@ -95,7 +122,7 @@ router.post("/login", async (req, res, next) => {
       return res.status(400).json({ message: error.message });
     }
 
-    // Find the user by email
+    // Find the user by email and verify password
     const user = await User.findOne({ email });
     if (!user || !(await user.comparePassword(password))) {
       return res.status(401).json({ message: "Email or password is wrong" });
@@ -129,7 +156,38 @@ router.post("/login", async (req, res, next) => {
   }
 });
 
-// Endpoint for logout
+// Endpoint for updating the user's avatar
+router.patch(
+  "/avatars",
+  auth,
+  uploadMiddleware.single("avatar"),
+  async (req, res, next) => {
+    try {
+      const { path: tempPath, originalname } = req.file;
+      const extension = path.extname(originalname);
+      const avatarName = `${req.user._id}${extension}`;
+      const avatarPath = path.join(avatarsDir, avatarName);
+
+      // Resize the avatar with Jimp
+      const image = await Jimp.read(tempPath);
+      await image.resize(250, 250).writeAsync(avatarPath);
+
+      // Delete the temporary file
+      await fs.unlink(tempPath);
+
+      // Update avatarURL in the database
+      const avatarURL = `/avatars/${avatarName}`;
+      req.user.avatarURL = avatarURL;
+      await req.user.save();
+
+      res.status(200).json({ avatarURL });
+    } catch (error) {
+      next(error);
+    }
+  }
+);
+
+// Endpoint for user logout
 router.get("/logout", auth, async (req, res, next) => {
   try {
     const user = req.user;
