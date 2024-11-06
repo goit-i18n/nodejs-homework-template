@@ -1,19 +1,41 @@
-// const fs = require('fs/promises')
+// models/contacts.js
+const Contact = require("./contact");
+const mongoose = require("mongoose");
 
-const listContacts = async () => {}
+async function listContacts() {
+  return await Contact.find();
+}
 
-const getContactById = async (contactId) => {}
+async function getById(contactId) {
+  if (!mongoose.Types.ObjectId.isValid(contactId)) {
+    throw new Error("Invalid ID format");
+  }
+  return Contact.findById(contactId);
+}
 
-const removeContact = async (contactId) => {}
+async function removeContact(contactId) {
+  const result = await Contact.findByIdAndRemove(contactId);
+  return result !== null;
+}
 
-const addContact = async (body) => {}
+async function addContact({ name, email, phone }) {
+  const newContact = new Contact({ name, email, phone });
+  return newContact.save();
+}
 
-const updateContact = async (contactId, body) => {}
+async function updateContact(contactId, updateData) {
+  return Contact.findByIdAndUpdate(contactId, updateData, { new: true });
+}
+
+async function updateStatusContact(contactId, favorite) {
+  return Contact.findByIdAndUpdate(contactId, { favorite }, { new: true });
+}
 
 module.exports = {
   listContacts,
-  getContactById,
+  getById,
   removeContact,
   addContact,
   updateContact,
-}
+  updateStatusContact,
+};
