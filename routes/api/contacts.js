@@ -1,84 +1,63 @@
 const express = require('express');
-const Joi = require('joi');
-const {
-  listContacts,
-  getById,
-  addContact,
-  removeContact,
-  updateContact,
-} = require('../../models/contacts');
-
 const router = express.Router();
+const contacts = require('../../models/contacts'); // Ensure the path to the model is correct
 
-const contactSchema = Joi.object({
-  name: Joi.string().required(),
-  email: Joi.string().email().required(),
-  phone: Joi.string().required(),
-});
-
-router.get('/', async (req, res, next) => {
+// Define the GET, POST, DELETE, PUT routes for the contacts API
+router.get('/', async (req, res) => {
   try {
-    const contacts = await listContacts();
-    res.status(200).json(contacts);
+    const allContacts = await contacts.listContacts();
+    res.status(200).json(allContacts);
   } catch (error) {
-    console.error('Error in GET /api/contacts:', error.message);
-    next(error);
+    res.status(500).json({ message: 'Failed to retrieve contacts', error });
   }
 });
 
-router.get('/:id', async (req, res, next) => {
+router.get('/:id', async (req, res) => {
   try {
-    const contact = await getById(req.params.id);
+    const contact = await contacts.getById(req.params.id);
     if (!contact) {
-      return res.status(404).json({ message: 'Not found' });
+      return res.status(404).json({ message: 'Contact not found' });
     }
     res.status(200).json(contact);
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: 'Failed to retrieve contact', error });
   }
 });
 
-
-router.post('/', async (req, res, next) => {
+router.post('/', async (req, res) => {
   try {
-    const { error } = contactSchema.validate(req.body);
-    if (error) {
-      return res.status(400).json({ message: `missing required ${error.details[0].context.key} field` });
+    const { name, email, phone } = req.body;
+    if (!name || !email || !phone) {
+      return res.status(400).json({ message: 'Missing required fields' });
     }
-    const newContact = await addContact(req.body);
+    const newContact = await contacts.addContact({ name, email, phone });
     res.status(201).json(newContact);
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: 'Failed to add contact', error });
   }
 });
 
-
-router.delete('/:id', async (req, res, next) => {
+router.delete('/:id', async (req, res) => {
   try {
-    const success = await removeContact(req.params.id);
+    const success = await contacts.removeContact(req.params.id);
     if (!success) {
-      return res.status(404).json({ message: 'Not found' });
+      return res.status(404).json({ message: 'Contact not found' });
     }
-    res.status(200).json({ message: 'contact deleted' });
+    res.status(200).json({ message: 'Contact deleted successfully' });
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: 'Failed to delete contact', error });
   }
 });
 
-// PUT /api/contacts/:id
-router.put('/:id', async (req, res, next) => {
+router.put('/:id', async (req, res) => {
   try {
-    const { error } = contactSchema.validate(req.body, { allowUnknown: true });
-    if (error) {
-      return res.status(400).json({ message: 'missing fields' });
-    }
-    const updatedContact = await updateContact(req.params.id, req.body);
+    const updatedContact = await contacts.updateContact(req.params.id, req.body);
     if (!updatedContact) {
-      return res.status(404).json({ message: 'Not found' });
+      return res.status(404).json({ message: 'Contact not found' });
     }
     res.status(200).json(updatedContact);
   } catch (error) {
-    next(error);
+    res.status(500).json({ message: 'Failed to update contact', error });
   }
 });
 
