@@ -10,24 +10,22 @@ const {
 
 const router = express.Router();
 
-// Validare Joi
 const contactSchema = Joi.object({
   name: Joi.string().required(),
   email: Joi.string().email().required(),
   phone: Joi.string().required(),
 });
 
-// GET /api/contacts
 router.get('/', async (req, res, next) => {
   try {
     const contacts = await listContacts();
     res.status(200).json(contacts);
   } catch (error) {
+    console.error('Error in GET /api/contacts:', error.message);
     next(error);
   }
 });
 
-// GET /api/contacts/:id
 router.get('/:id', async (req, res, next) => {
   try {
     const contact = await getById(req.params.id);
@@ -40,7 +38,7 @@ router.get('/:id', async (req, res, next) => {
   }
 });
 
-// POST /api/contacts
+
 router.post('/', async (req, res, next) => {
   try {
     const { error } = contactSchema.validate(req.body);
@@ -54,7 +52,7 @@ router.post('/', async (req, res, next) => {
   }
 });
 
-// DELETE /api/contacts/:id
+
 router.delete('/:id', async (req, res, next) => {
   try {
     const success = await removeContact(req.params.id);
