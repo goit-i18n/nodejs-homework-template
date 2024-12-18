@@ -1,20 +1,20 @@
-const mongoose = require("mongoose");
-const bcrypt = require("bcryptjs");
+const { Schema, model } = require('mongoose');
+const bcrypt = require('bcryptjs');
 
-const userSchema = new mongoose.Schema({
+const userSchema = new Schema({
   password: {
     type: String,
-    required: [true, "Password is required"],
+    required: [true, 'Password is required'],
   },
   email: {
     type: String,
-    required: [true, "Email is required"],
+    required: [true, 'Email is required'],
     unique: true,
   },
   subscription: {
     type: String,
-    enum: ["starter", "pro", "business"],
-    default: "starter",
+    enum: ['starter', 'pro', 'business'],
+    default: 'starter',
   },
   token: {
     type: String,
@@ -22,13 +22,14 @@ const userSchema = new mongoose.Schema({
   },
 });
 
-// Criptarea parolei înainte de salvare
-userSchema.pre("save", async function (next) {
-  if (this.isModified("password")) {
-    const salt = await bcrypt.genSalt(10);
-    this.password = await bcrypt.hash(this.password, salt);
+// Pre-save hook to hash passwords
+userSchema.pre('save', async function (next) {
+  if (this.isModified('password')) {
+    this.password = await bcrypt.hash(this.password, 10);
   }
   next();
 });
 
-module.exports = mongoose.model("User", userSchema);
+const User = model('User', userSchema);
+
+module.exports = User;
