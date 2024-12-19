@@ -1,19 +1,32 @@
-// const fs = require('fs/promises')
+const { Schema, model } = require('mongoose');
 
-const listContacts = async () => {}
+const contactSchema = new Schema(
+  {
+    name: {
+      type: String,
+      required: true,
+      trim: true,
+      minlength: 2,
+      maxlength: 50,
+    },
+    phone: {
+      type: String,
+      required: true,
+      match: [/^\+?[1-9]\d{1,14}$/, 'Invalid phone number format'], 
+    },
+    owner: {
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+      required: true,
+    },
+  },
+  {
+    timestamps: true, 
+  }
+);
 
-const getContactById = async (contactId) => {}
+contactSchema.index({ name: 1, owner: 1 });
 
-const removeContact = async (contactId) => {}
+const Contact = model('Contact', contactSchema);
 
-const addContact = async (body) => {}
-
-const updateContact = async (contactId, body) => {}
-
-module.exports = {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
-}
+module.exports = Contact;
