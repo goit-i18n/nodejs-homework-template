@@ -1,86 +1,63 @@
-const User = require("../models/user");
-const Joi = require("joi");
+const User = require('../models/user');  
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const config = require('../config/config');
 
-const signupValidationSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-});
+const registerUser = async (req, res) => {
+  const { email, password } = req.body;
 
-const signup = async (req, res) => {
   try {
-    // Validarea datelor primite
-    const { email, password } = await signupValidationSchema.validateAsync(req.body);
-
-    // Verificarea dacă utilizatorul există deja
+    
     const existingUser = await User.findOne({ email });
     if (existingUser) {
-      return res.status(409).json({ message: "Email in use" });
+      return res.status(400).json({ message: 'User already exists' });
     }
 
-    // Crearea unui nou utilizator
-    const newUser = await User.create({ email, password });
-    return res.status(201).json({
-      user: {
-        email: newUser.email,
-        subscription: newUser.subscription,
-      },
-    });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ email, password: hashedPassword });
+
+    await newUser.save();
+
+    res.status(201).json({ message: 'User registered successfully' });
   } catch (error) {
-    if (error.isJoi) {
-      return res.status(400).json({ message: error.message });
-    }
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-module.exports = { signup };
+const loginUser = async (req, res) => {
+  const { email, password } = req.body;
 
-const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const { JWT_SECRET } = require("../config");
-
-const loginValidationSchema = Joi.object({
-  email: Joi.string().email().required(),
-  password: Joi.string().min(6).required(),
-});
-
-const login = async (req, res) => {
   try {
-    // Validarea datelor primite
-    const { email, password } = await loginValidationSchema.validateAsync(req.body);
-
-    // Verificarea existenței utilizatorului
+    
     const user = await User.findOne({ email });
     if (!user) {
-      return res.status(401).json({ message: "Email or password is wrong" });
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Verificarea parolei
-    const isPasswordValid = await bcrypt.compare(password, user.password);
-    if (!isPasswordValid) {
-      return res.status(401).json({ message: "Email or password is wrong" });
+    const isMatch = await bcrypt.compare(password, user.password);
+    if (!isMatch) {
+      return res.status(400).json({ message: 'Invalid credentials' });
     }
 
-    // Generarea token-ului JWT
-    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
-
-    // Salvarea token-ului în baza de date
+    const token = jwt.sign({ id: user._id }, config.jwtSecret, { expiresIn: '1h' });
     user.token = token;
     await user.save();
 
-    return res.status(200).json({
-      token,
-      user: {
-        email: user.email,
-        subscription: user.subscription,
-      },
-    });
+    res.json({ token });
   } catch (error) {
-    if (error.isJoi) {
-      return res.status(400).json({ message: error.message });
-    }
-    return res.status(500).json({ message: "Server error" });
+    res.status(500).json({ message: 'Internal Server Error' });
   }
 };
 
-module.exports = { signup, login };
+const logoutUser = async (req, res) => {
+  try {
+    const user = req.user;
+    user.token = null;
+    await user.save();
+    res.status(200).json({ message: 'User logged out successfully' });
+  } catch (error) {
+    res.status(500).json({ message: 'Internal Server Error' });
+  }
+};
+
+module.exports = { registerUser, loginUser, logoutUser };

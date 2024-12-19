@@ -2,8 +2,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/user');
 
-const SECRET_KEY = 'your_secret_key'; // Schimbă-l cu o cheie secretă sigură
-
+const SECRET_KEY = process.env.JWT_SECRET_KEY || 'your_secret_key'; 
 
 const registerUser = async (req, res) => {
   const { email, password } = req.body;
@@ -14,7 +13,8 @@ const registerUser = async (req, res) => {
       return res.status(409).json({ message: 'Email in use' });
     }
 
-    const newUser = new User({ email, password });
+    const hashedPassword = await bcrypt.hash(password, 10);
+    const newUser = new User({ email, password: hashedPassword });
     await newUser.save();
 
     res.status(201).json({
@@ -60,17 +60,15 @@ const loginUser = async (req, res) => {
 
 const logoutUser = async (req, res) => {
   const user = req.user;
-  user.token = null;
+  user.token = undefined; 
   await user.save();
   res.status(204).send();
 };
-
 
 const getCurrentUser = (req, res) => {
   const { email, subscription } = req.user;
   res.status(200).json({ email, subscription });
 };
-
 
 const updateSubscription = async (req, res) => {
   const { subscription } = req.body;
