@@ -1,7 +1,6 @@
 const mongoose = require("mongoose");
 
 const userSchema = new mongoose.Schema({
-
   email: {
     type: String,
     required: true,
@@ -17,11 +16,6 @@ const userSchema = new mongoose.Schema({
     enum: ["starter", "pro", "business"],
     default: "starter",
   },
-  /* token: {
-     type: String,
-     default: null,
-   },
-   */
 });
 
 const User = mongoose.model("User", userSchema);

@@ -16,5 +16,4 @@ authRouter.get("/logout", authMiddleware, logout);
 
 authRouter.get("/currentuser", authMiddleware, getCurrentUser);
 
-
 module.exports = authRouter;
