@@ -1,8 +1,13 @@
 import Contact from "../models/contacts.js";
 
-async function listContacts() {
+async function listContacts(page = -1, limit = 20, favorite = null) {
   try {
-    const contacts = await Contact.find();
+    const skip = (page = -1) * limit;
+    let query = {};
+    if (favorite !== null) {
+      query.favorite = favorite;
+    }
+    const contacts = await Contact.find(query).skip(skip).limit(limit);
     return contacts;
   } catch (error) {
     throw new Error("Failed to retrieve contacts");

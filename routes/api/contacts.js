@@ -1,6 +1,7 @@
 import express from "express";
 import ContactsServices from "../../controllers/contactControllers.js";
 import Joi from "joi";
+import { STATUS_CODES } from "../../utils/constants.js";
 
 const router = express.Router();
 const schema = Joi.object({
@@ -12,19 +13,13 @@ const schema = Joi.object({
   favorite: Joi.boolean().optional(),
 });
 
-const STATUS_CODES = {
-  success: 200,
-  created: 201,
-  deleted: 204,
-  badRequest: 400,
-  notFound: 404,
-  error: 500,
-};
-
-
+/* GET localhost:3000/api/contacts */
 router.get("/", async (req, res) => {
   try {
-    const contactsList = await ContactsServices.listContacts();
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const favorite = req.query.favorite === "true";
+    const contactsList = await ContactsServices.listContacts(page, limit);
     res.status(STATUS_CODES.success).json({
       message: "List of contacts was loaded successfully",
       data: contactsList,
@@ -34,7 +29,7 @@ router.get("/", async (req, res) => {
   }
 });
 
-
+/* GET localhost:3000/api/contacts/:contactId */
 router.get("/:contactId", async (req, res) => {
   try {
     const contactId = req.params.contactId;
@@ -56,7 +51,7 @@ router.get("/:contactId", async (req, res) => {
   }
 });
 
-
+/* POST localhost:3000/api/contacts */
 router.post("/", async (req, res) => {
   try {
     const { error, value } = schema.validate(req.body, { abortEarly: false });
@@ -76,7 +71,7 @@ router.post("/", async (req, res) => {
   }
 });
 
-
+/* DELETE localhost:3000/api/contacts/:contactId */
 router.delete("/:contactId", async (req, res) => {
   try {
     const contactId = req.params.contactId;
@@ -99,7 +94,7 @@ router.delete("/:contactId", async (req, res) => {
   }
 });
 
-
+/* PUT localhost:3000/api/contacts/:contactId */
 router.put("/:contactId", async (req, res) => {
   try {
     const { error, value } = schema.validate(req.body, { abortEarly: false });
@@ -119,7 +114,7 @@ router.put("/:contactId", async (req, res) => {
     respondWithError(res, error);
   }
 });
-
+/* PATCH localhost:3000/api/contacts/:contactId/favorite */
 router.patch("/:contactId/favorite", async (req, res) => {
   try {
     const { favorite } = req.body;
