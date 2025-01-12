@@ -1,5 +1,9 @@
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const gravatar = require("gravatar");
+const Jimp = require("jimp");
+const fs = require("fs");
+const path = require("path");
 const User = require("../models/users.js");
 
 const JWT_SECRET = "secret_key_for_jwt";
@@ -7,60 +11,134 @@ const JWT_SECRET = "secret_key_for_jwt";
 const register = async (req, res) => {
   const { email, password } = req.body;
 
-  const existingUser = await User.findOne({ email });
-  if (existingUser) {
-    return res.status(409).json({ message: "Email in use" });
+  if (!email || !password) {
+    return res.status(400).json({ message: "Missing required fields: email or password" });
   }
 
-  const hashedPassword = await bcrypt.hash(password, 10);
+  try {
 
-  const newUser = await User.create({
-    email,
-    password: hashedPassword,
-  });
+    const existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(409).json({ message: "Email in use" });
+    }
 
-  res.status(201).json({
-    user: {
-      email: newUser.email,
-      subscription: newUser.subscription,
-    },
-  });
+
+    const avatarURL = gravatar.url(email, { s: "250", d: "retro" }, true);
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const newUser = await User.create({
+      email,
+      password: hashedPassword,
+      avatarURL,
+    });
+
+    res.status(201).json({
+      user: {
+        email: newUser.email,
+        subscription: newUser.subscription,
+        avatarURL: newUser.avatarURL,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
+
 
 const login = async (req, res) => {
   const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
-  if (!user || !(await bcrypt.compare(password, user.password))) {
-    return res.status(404).json({ message: "User not found" });
+  if (!email || !password) {
+    return res.status(400).json({ message: "Missing required fields: email or password" });
   }
 
-  const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
-  user.token = token;
-  await user.save();
+  try {
+    const user = await User.findOne({ email });
+    if (!user || !(await bcrypt.compare(password, user.password))) {
+      return res.status(404).json({ message: "User not found" });
+    }
 
-  res.json({
-    token,
-    user: {
-      email: user.email,
-      subscription: user.subscription,
-    },
-  });
+    const token = jwt.sign({ id: user._id }, JWT_SECRET, { expiresIn: "1h" });
+    user.token = token;
+    await user.save();
+
+    res.json({
+      token,
+      user: {
+        email: user.email,
+        subscription: user.subscription,
+      },
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+
+  }
 };
 
 const logout = async (req, res) => {
-  const user = req.user;
-  user.token = null;
-  await user.save();
-  res.status(204).send();
+  try {
+    const user = req.user;
+    user.token = null;
+    await user.save();
+    res.status(204).send();
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
 const getCurrentUser = async (req, res) => {
-  const user = req.user;
-  res.json({
-    email: user.email,
-    subscription: user.subscription,
-  });
+  try {
+    const user = req.user;
+
+    res.json({
+      email: user.email,
+      subscription: user.subscription,
+      avatarURL: user.avatarURL,
+    });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
 };
 
-module.exports = { register, login, logout, getCurrentUser };
+const updateAvatar = async (req, res) => {
+  const { file } = req;
+  const { user } = req;
+  console.log('File details:', file);
+
+  if (!file) {
+    return res.status(400).json({ message: "No file uploaded" });
+  }
+
+  try {
+    const tmpPath = file.path;
+    console.log('Temp path:', tmpPath);
+    const avatarsDir = path.join(__dirname, "../public/avatars");
+
+    await fs.mkdir(avatarsDir, { recursive: true });
+
+    const image = await Jimp.read(tmpPath);
+    await image.resize(250, 250).writeAsync(tmpPath);
+
+    const newFileName = `${Date.now()}-${file.originalname}`;
+    const newPath = path.join(avatarsDir, newFileName);
+
+    await fs.rename(tmpPath, newPath);
+
+    const avatarURL = `/avatars/${newFileName}`;
+    user.avatarURL = avatarURL;
+    await user.save();
+
+    res.status(200).json({
+      message: "Avatar saved successfully",
+      avatarURL,
+    });
+
+  } catch (error) {
+    console.error(error.message);
+    res.status(500).json({ message: error.message });
+  }
+
+}
+
+module.exports = { register, login, logout, getCurrentUser, updateAvatar };
