@@ -1,19 +1,54 @@
-// const fs = require('fs/promises')
+const mongoose = require("mongoose");
+const { Schema, model } = mongoose;
 
-const listContacts = async () => {}
-
-const getContactById = async (contactId) => {}
-
-const removeContact = async (contactId) => {}
-
-const addContact = async (body) => {}
-
-const updateContact = async (contactId, body) => {}
-
-module.exports = {
-  listContacts,
-  getContactById,
-  removeContact,
-  addContact,
-  updateContact,
+/**
+{
+  "_id": {
+    "$oid": "664ac4ce83b712a0156cf3c8"
+  },
+  "name": "Allen Raymond",
+  "email": "nulla.ante@vestibul.co.uk",
+  "phone": "(992) 914-3792",
+  "favorite": false
 }
+ */
+
+const phoneRegex =
+  /^(\+?\d{1,3})?[-.\s]?(\(?\d{2,4}\)?[-.\s]?)?(\d{2,4}[-.\s]?\d{2,4}[-.\s]?\d{2,4})$/;
+
+const contactSchema = new Schema({
+  name: {
+    type: String,
+    minLength: 3,
+    maxLength: 30,
+    required: [true, "Set name for contact"],
+  },
+  email: {
+    type: String,
+    trim: true,
+    unique: true,
+    required: true,
+    match: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, // Regex pentru validarea email-ului. Pentru validarea riguroasă a email-urilor, se poate utiliza o bibliotecă specializată.
+  },
+  phone: {
+    type: String,
+    validate: {
+      validator: function (v) {
+        return phoneRegex.test(v); // Validare număr de telefon flexibilă
+      },
+      message: (props) => `${props.value} is not a valid phone number!`,
+    },
+  },
+  favorite: {
+    type: Boolean,
+    default: false,
+  },
+  owner: {
+    type: Schema.Types.ObjectId,
+    ref: "user", // Referință la modelul 'User'
+  },
+});
+
+const Contact = model("Contact", contactSchema);
+
+module.exports = Contact;
