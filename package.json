@@ -9,12 +9,16 @@
     "lint:fix": "eslint --fix **/*.js"
   },
   "dependencies": {
+    "@sendgrid/mail": "^8.1.4",
     "cors": "^2.8.5",
     "cross-env": "7.0.3",
-    "express": "^4.21.1",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
     "joi": "^17.13.3",
+    "mongoose": "^8.9.5",
     "morgan": "^1.10.0",
-    "uuid": "^11.0.3"
+    "nodemailer": "^6.9.16",
+    "uuid": "^11.0.5"
   },
   "devDependencies": {
     "eslint": "7.19.0",
