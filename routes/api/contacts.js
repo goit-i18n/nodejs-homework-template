@@ -33,7 +33,7 @@ router.post("/", async (req, res) => {
 router.delete("/:id", async (req, res) => {
   const isDeleted = await removeContact(req.params.id);
   if (!isDeleted) {
-    return res.status(404).json({ message: "Not found" });
+    return res.status(404).json({ message: "Not-found" });
   }
   res.status(200).json({ message: "contact deleted" });
 });
