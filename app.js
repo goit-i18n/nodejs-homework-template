@@ -15,8 +15,7 @@ const formatsLogger = app.get("env") === "development" ? "dev" : "short";
 connectToDb()
   .then(() => {
     console.log("Database connection successful");
-  }
-  )
+  })
   .catch((err) => {
     console.error("Database connection error:", err.message);
     process.exit(1);

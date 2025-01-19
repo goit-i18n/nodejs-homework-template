@@ -5,6 +5,8 @@ const {
   logout,
   getCurrentUser,
   updateAvatar,
+  verifyEmail,
+  resendVerificationEmail,
 } = require("../../controllers/authController");
 const authMiddleware = require("../../middlewares/authMiddleware");
 const upload = require("../../middlewares/upload");
@@ -18,6 +20,15 @@ authRouter.get("/logout", authMiddleware, logout);
 
 authRouter.get("/currentuser", authMiddleware, getCurrentUser);
 
-authRouter.patch("/avatars", authMiddleware, upload.single("avatar"), updateAvatar);
+authRouter.patch(
+  "/avatars",
+  authMiddleware,
+  upload.single("avatar"),
+  updateAvatar
+);
+
+authRouter.get("/verify/:verificationToken", verifyEmail);
+
+authRouter.post("/verify", resendVerificationEmail);
 
 module.exports = authRouter;
