@@ -33,7 +33,7 @@ router.get('/:id', async (req, res, next) => {
     const contact = await contactsService.getContactById(req.params.id);
     if (!contact) {
       res.status(404);
-      throw new Error(`Contact with id: ${id} not found`)
+      throw new Error(`Contact with id: ${req.params.id} not found`)
     }
     res
       .status(STATUS_CODES.success)
@@ -193,11 +193,11 @@ function respondWithError(res, error) {
 /**
  * verifica daca noul contact pe care vrem sa il adaugam este valid 
  */
-function checkIsContactValid(contact) {
-  if (!contact?.name || !contact?.email || !contact?.phone) {
-    return false
-  }
-  return true;
-}
+// function checkIsContactValid(contact) {
+//   if (!contact?.name || !contact?.email || !contact?.phone) {
+//     return false
+//   }
+//   return true;
+// }
 
 
