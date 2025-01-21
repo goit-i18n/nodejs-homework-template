@@ -15,7 +15,6 @@ const STATUS_CODES = {
 router.get('/', async (req, res, next) => {
   try {
     const contacts = await contactsService.listContacts();
-    // console.table(contacts);
 
     res
       .status(STATUS_CODES.success)
@@ -50,7 +49,7 @@ router.get('/:id', async (req, res, next) => {
 
 router.post("/", async (req, res, next) => {
   try {
-    // Validează datele primite
+
     const { error } = contactSchema.validate(req.body);
     if (error) {
       res.status(400).json({ message: error.details[0].message });
@@ -68,30 +67,6 @@ router.post("/", async (req, res, next) => {
     respondWithError(res, error);
   }
 });
-
-
-// router.post('/', async (req, res, next) => {
-//   try {
-//     const isValid = checkIsContactValid(req.body);
-
-//     if (!isValid) {
-//       res.status(400);
-//       throw new Error("missing required name field")
-//     }
-//     const newContact = await contactsService.addContact(req.body);
-    
-//     res
-//       .status(201)
-//       .json({message: `Contact details for ${newContact.name} were successfuly added`, data: newContact });
-    
-//   } catch (error) {
-//     respondWithError(res, error);
-//   }
-  
-// })
-
-
-
 
 
 /* DELETE localhost:3000/api/contacts/:contactId  */
@@ -115,10 +90,9 @@ router.delete('/:id', async (req, res, next) => {
 
 
 /* PUT localhost:3000/api/contacts/:contactId  */
-
 router.put("/:id", async (req, res, next) => {
   try {
-    // Validează datele primite
+  
     const { error } = contactSchema.validate(req.body);
     if (error) {
       res.status(400).json({ message: error.details[0].message });
@@ -145,44 +119,9 @@ router.put("/:id", async (req, res, next) => {
 });
 
 
-
-
-// router.put('/:id', async (req, res, next) => {
-//   try {
-//     const updatedFields = req.body;
-//     const contactId = req.params.id;
-
-//     // Verificăm dacă body-ul este gol sau lipsesc câmpurile valide
-//     const isValid = updatedFields?.name || updatedFields?.email || updatedFields?.phone;
-//     if (!isValid) {
-//       res.status(400).json({ message: "missing fields" });
-//       return;
-//     }
-
-//     // Apelează funcția updateContact
-//     const updatedContact = await contactsService.updateContact(updatedFields, contactId);
-
-//     if (!updatedContact) {
-//       res.status(404).json({ message: "Not found" });
-//       return;
-//     }
-
-//     res.status(200).json({
-//       message: `Contact details for ${updatedContact.name} were successfully updated`,
-//       data: updatedContact,
-//     });
-//   } catch (error) {
-//     respondWithError(res, error);
-//   }
-// });
-
-
-
 export default router;
 
-/**
- * Handles Errror Cases
- */
+
 function respondWithError(res, error) {
   console.error(error);
   res
@@ -190,14 +129,5 @@ function respondWithError(res, error) {
     .json({ message: `${error}`});
 }
 
-/**
- * verifica daca noul contact pe care vrem sa il adaugam este valid 
- */
-// function checkIsContactValid(contact) {
-//   if (!contact?.name || !contact?.email || !contact?.phone) {
-//     return false
-//   }
-//   return true;
-// }
 
 
